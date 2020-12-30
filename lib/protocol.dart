@@ -4,9 +4,8 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:pointycastle/src/utils.dart';
-
 import 'package:dartssh/serializable.dart';
+import 'package:pointycastle/src/utils.dart';
 
 /// Rounds [input] up to the next [n]th, if necessary.
 int nextMultipleOfN(int input, int n) =>
@@ -657,7 +656,7 @@ class MSG_USERAUTH_INFO_REQUEST extends SSHMessage {
     instruction = deserializeString(input);
     language = deserializeString(input);
     numPrompts = input.getUint32();
-    prompts = List<MapEntry<String, int>>();
+    prompts = <MapEntry<String, int>>[];
     for (int i = 0; i < numPrompts; i++) {
       prompts.add(
           MapEntry<String, int>(deserializeString(input), input.getUint8()));

@@ -59,7 +59,8 @@ class WebSocketImpl extends SocketInterface {
     assert(!ignoreBadCert);
     try {
       connectCallback = onConnected;
-      socket = html.WebSocket('$uri');
+      socket = html.WebSocket('$uri')..binaryType = 'arraybuffer';
+
       socket.onOpen.listen(connectSucceeded);
       connectErrorSubscription =
           socket.onError.listen((error) => onError('$error'));
@@ -105,7 +106,8 @@ class WebSocketImpl extends SocketInterface {
     if (messageSubscription == null) {
       messageSubscription = socket.onMessage.listen((e) {
         if (messageHandler != null) {
-          messageHandler(e.data);
+          final data = e.data is Uint8List ? e.data : e.data.asUint8List();
+          messageHandler(data);
         }
       });
     }

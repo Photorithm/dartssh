@@ -37,7 +37,7 @@ class WebSocketImpl extends SocketInterface {
     doneHandler = null;
     if (socket != null) {
       socket.close();
-      socket == null;
+      socket = null;
     }
   }
 
@@ -56,14 +56,14 @@ class WebSocketImpl extends SocketInterface {
       }, onError: (error, _) => onError(error));
     }
 
-    io.HttpClient client = io.HttpClient();
+    final io.HttpClient client = io.HttpClient();
     client.badCertificateCallback =
         (io.X509Certificate cert, String host, int port) => true;
 
     /// Upgrade https to wss using [badCertificateCallback] to allow
     /// self-signed certificates.  This still gains you stream encryption.
     try {
-      io.HttpClientRequest request =
+      final io.HttpClientRequest request =
           await client.getUrl(Uri.parse('https' + '$uri'.substring(3)));
       request.headers.add('Connection', 'upgrade');
       request.headers.add('Upgrade', 'websocket');
@@ -71,7 +71,7 @@ class WebSocketImpl extends SocketInterface {
       request.headers.add(
           'sec-websocket-key', base64.encode(randBytes(Random.secure(), 8)));
 
-      io.HttpClientResponse response = await request.close()
+      final io.HttpClientResponse response = await request.close()
         ..timeout(Duration(seconds: timeoutSeconds));
 
       socket = io.WebSocket.fromUpgradedSocket(await response.detachSocket(),
@@ -174,7 +174,7 @@ class SSHTunneledWebSocketImpl extends WebSocketImpl {
               )));
     }
 
-    HttpResponse response = await httpRequest(
+    final HttpResponse response = await httpRequest(
       uri,
       'GET',
       tunneledSocket,

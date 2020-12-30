@@ -6,7 +6,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:args/args.dart';
-
 import 'package:dartssh/client.dart';
 import 'package:dartssh/identity.dart';
 import 'package:dartssh/pem.dart';
@@ -99,9 +98,9 @@ Future<int> ssh(List<String> arguments, Stream<List<int>> input,
         agentForwarding: args['agentForwarding'],
         debugPrint: args['debug'] ? print : null,
         tracePrint: args['trace'] ? print : null,
-        getPassword: ((args['password'] != null)
+        getPassword: (args['password'] != null)
             ? () => utf8.encode(args['password'])
-            : null),
+            : null,
         response: response,
         loadIdentity: () {
           if (identity == null && identityFile != null) {
@@ -114,7 +113,7 @@ Future<int> ssh(List<String> arguments, Stream<List<int>> input,
         success: tunnel == null
             ? null
             : () {
-                List<String> tunnelTarget = tunnel.split(':');
+                final List<String> tunnelTarget = tunnel.split(':');
                 forwardChannel = client.openTcpChannel(
                     '127.0.0.1',
                     1234,
@@ -123,7 +122,7 @@ Future<int> ssh(List<String> arguments, Stream<List<int>> input,
                     (_, Uint8List m) => response(client, utf8.decode(m)));
               });
 
-    await for (String x in input.transform(utf8.decoder)) {
+    await for (final x in input.transform(utf8.decoder)) {
       send(utf8.encode(x));
     }
   } catch (error, stacktrace) {

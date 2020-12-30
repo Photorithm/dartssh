@@ -3,17 +3,16 @@
 
 import 'dart:typed_data';
 
+import 'package:dartssh/protocol.dart';
+import 'package:dartssh/serializable.dart';
+import 'package:dartssh/ssh.dart';
+import 'package:dartssh/tweetnacl/tweetnacl.dart' as tweetnacl;
 import 'package:pointycastle/api.dart' hide Signature;
 import 'package:pointycastle/asymmetric/api.dart' as asymmetric;
 import 'package:pointycastle/digests/sha1.dart';
 import 'package:pointycastle/ecc/api.dart';
 import 'package:pointycastle/signers/ecdsa_signer.dart';
 import 'package:pointycastle/signers/rsa_signer.dart';
-import 'package:tweetnacl/tweetnacl.dart' as tweetnacl;
-
-import 'package:dartssh/protocol.dart';
-import 'package:dartssh/serializable.dart';
-import 'package:dartssh/ssh.dart';
 
 class Identity {
   tweetnacl.KeyPair ed25519;

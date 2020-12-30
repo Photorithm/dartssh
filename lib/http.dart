@@ -6,12 +6,11 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:http/http.dart' as http;
-
 import 'package:dartssh/client.dart';
 import 'package:dartssh/serializable.dart';
 import 'package:dartssh/socket.dart';
 import 'package:dartssh/transport.dart';
+import 'package:http/http.dart' as http;
 
 typedef HttpClientFactory = http.Client Function();
 typedef SocketFilter = Future<SocketInterface> Function(SocketInterface);
@@ -55,7 +54,7 @@ class TestHttpClient extends HttpClient {
   @override
   Future<HttpResponse> request(String url,
       {String method, String data, Map<String, String> headers}) {
-    HttpRequest httpRequest = HttpRequest(url, method, data: data);
+    final HttpRequest httpRequest = HttpRequest(url, method, data: data);
     requests.add(httpRequest);
     return httpRequest.completer.future;
   }
@@ -77,8 +76,8 @@ class HttpClientImpl extends HttpClient {
     numOutstanding++;
     if (debugPrint != null) debugPrint('HTTP Request: $url');
 
-    http.Client client = clientFactory();
-    var uriResponse;
+    final http.Client client = clientFactory();
+    http.Response uriResponse;
     switch (method) {
       case 'POST':
         uriResponse = await client.post(url, body: data, headers: headers);
@@ -89,7 +88,7 @@ class HttpClientImpl extends HttpClient {
         break;
     }
 
-    HttpResponse ret =
+    final HttpResponse ret =
         HttpResponse(uriResponse.statusCode, text: uriResponse.body);
     if (debugPrint != null) {
       debugPrint('HTTP Response=${ret.status}: ${ret.text}');
@@ -119,6 +118,7 @@ class UserAgentBaseClient extends http.BaseClient {
   final http.Client inner;
   UserAgentBaseClient(this.userAgent, this.inner);
 
+  @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {
     if (userAgent != null) {
       request.headers['user-agent'] = userAgent;
@@ -139,7 +139,7 @@ class SSHTunneledBaseClient extends http.BaseClient {
       request.headers['user-agent'] = userAgent;
     }
 
-    HttpResponse response = await httpRequest(
+    final HttpResponse response = await httpRequest(
       request.url,
       request.method,
       SSHTunneledSocketImpl.fromClient(client),
@@ -174,10 +174,10 @@ Map<String, String> addBasicAuthenticationHeader(
 Future<SocketInterface> connectUri(Uri uri, SocketInterface socket,
     {SocketFilter secureUpgrade}) async {
   /// We might be asking the remote to open an SSH tunnel to [uri].
-  Completer<String> connectCompleter = Completer<String>();
+  final Completer<String> connectCompleter = Completer<String>();
   socket.connect(uri, () => connectCompleter.complete(null),
       (error) => connectCompleter.complete('$error'));
-  String connectError = await connectCompleter.future;
+  final String connectError = await connectCompleter.future;
   if (connectError != null) throw FormatException(connectError);
 
   if (secureUpgrade != null &&
@@ -200,9 +200,10 @@ Future<HttpResponse> httpRequest(Uri uri, String method, SocketInterface socket,
   List<String> statusLine;
   Map<String, String> headers;
   int contentLength = 0, contentRead = 0;
-  QueueBuffer buffer = QueueBuffer(Uint8List(0));
-  Completer<String> readHeadersCompleter = Completer<String>();
-  StreamController<List<int>> contentController = StreamController<List<int>>();
+  final QueueBuffer buffer = QueueBuffer(Uint8List(0));
+  final Completer<String> readHeadersCompleter = Completer<String>();
+  final StreamController<List<int>> contentController =
+      StreamController<List<int>>();
 
   if (!socket.connected && !socket.connecting) {
     socket = await connectUri(uri, socket);
@@ -231,18 +232,20 @@ Future<HttpResponse> httpRequest(Uri uri, String method, SocketInterface socket,
     }
     if (headerText == null) {
       buffer.add(m);
-      int headersEnd = searchUint8List(
+      final int headersEnd = searchUint8List(
           buffer.data, Uint8List.fromList('\r\n\r\n'.codeUnits));
 
       /// Parse HTTP headers.
       if (headersEnd != -1) {
         headerText = utf8.decode(viewUint8List(buffer.data, 0, headersEnd));
         buffer.flush(headersEnd + 4);
-        var lines = LineSplitter.split(headerText);
+        final lines = LineSplitter.split(headerText);
         statusLine = lines.first.split(' ');
-        headers = Map<String, String>.fromIterable(lines.skip(1),
-            key: (h) => h.substring(0, h.indexOf(': ')),
-            value: (h) => h.substring(h.indexOf(': ') + 2).trim());
+        final headers = {
+          for (final h in lines.skip(1))
+            h.substring(0, h.indexOf(': ')):
+                h.substring(h.indexOf(': ') + 2).trim()
+        };
         headers.forEach((key, value) {
           if (key.toLowerCase() == 'content-length') {
             contentLength = int.parse(value);
@@ -288,14 +291,14 @@ Future<HttpResponse> httpRequest(Uri uri, String method, SocketInterface socket,
   if (method == 'POST') {
     requestHeaders['Content-Length'] = '${body.length}';
   }
-  socket.send('${method} /${uri.path} HTTP/1.1\r\n' +
+  socket.send('$method /${uri.path} HTTP/1.1\r\n' +
       requestHeaders.entries
           .map((header) => '${header.key}: ${header.value}')
           .join('\r\n') +
       '\r\n\r\n');
   if (method == 'POST') socket.sendRaw(body);
 
-  String readHeadersError = await readHeadersCompleter.future;
+  final String readHeadersError = await readHeadersCompleter.future;
   if (readHeadersError != null) throw FormatException(readHeadersError);
 
   return HttpResponse(int.parse(statusLine[1]),

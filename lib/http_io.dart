@@ -23,8 +23,8 @@ class HttpClientImpl extends HttpClient {
       {String method, String data, Map<String, String> headers}) async {
     numOutstanding++;
 
-    Uri uri = Uri.parse(url);
-    var request;
+    final Uri uri = Uri.parse(url);
+    io.HttpClientRequest request;
     switch (method) {
       case 'POST':
         request = await client.postUrl(uri);
@@ -36,14 +36,14 @@ class HttpClientImpl extends HttpClient {
     }
 
     if (headers != null) {
-      headers
-          .forEach((String key, String value) => request.headers[key] = value);
+      headers.forEach(
+          (String key, String value) => request.headers.set(key, value));
     }
 
     if (debugPrint != null) debugPrint('HTTP Request: ${request.uri}');
-    var response = await request.close();
-    HttpResponse ret = HttpResponse(response.statusCode);
-    await for (var contents in response.transform(Utf8Decoder())) {
+    final response = await request.close();
+    final HttpResponse ret = HttpResponse(response.statusCode);
+    await for (final contents in response.transform(const Utf8Decoder())) {
       if (ret.text == null) {
         ret.text = contents;
       } else {

@@ -50,7 +50,7 @@ class SocketImpl extends SocketInterface {
             uri, () => connectSucceeded(onConnected), onError,
             timeoutSeconds: timeoutSeconds, ignoreBadCert: ignoreBadCert);
       } else {
-        throw FormatException();
+        throw const FormatException();
       }
     } else {
       Socket.connect(uri.host, uri.port,
@@ -80,21 +80,19 @@ class SocketImpl extends SocketInterface {
   @override
   void listen(Uint8ListCallback newMessageHandler) {
     messageHandler = newMessageHandler;
-    if (messageSubscription == null) {
-      messageSubscription = socket.listen((Uint8List m) {
-        if (messageHandler != null) {
-          messageHandler(m);
-        }
-      }, onDone: () {
-        if (onDone != null) {
-          onDone(null);
-        }
-      }, onError: (error, stacktrace) {
-        if (onError != null) {
-          onError('$error: $stacktrace');
-        }
-      });
-    }
+    messageSubscription ??= socket.listen((Uint8List m) {
+      if (messageHandler != null) {
+        messageHandler(m);
+      }
+    }, onDone: () {
+      if (onDone != null) {
+        onDone(null);
+      }
+    }, onError: (error, stacktrace) {
+      if (onError != null) {
+        onError('$error: $stacktrace');
+      }
+    });
   }
 
   @override
@@ -161,18 +159,18 @@ class SocketAdaptor extends Stream<Uint8List> implements Socket {
   void write(Object obj) => sink.write(obj);
 
   @override
-  void writeAll(Iterable objects, [String separator = ""]) =>
+  void writeAll(Iterable objects, [String separator = '']) =>
       sink.writeAll(objects, separator);
 
   @override
-  void writeln([Object obj = ""]) => sink.writeln(obj);
+  void writeln([Object obj = '']) => sink.writeln(obj);
 
   @override
   void writeCharCode(int charCode) => sink.writeCharCode(charCode);
 
   @override
-  void addError(error, [StackTrace stackTrace]) {
-    throw UnsupportedError("Cannot send errors on sockets");
+  void addError(dynamic error, [StackTrace stackTrace]) {
+    throw UnsupportedError('Cannot send errors on sockets');
   }
 
   @override
@@ -197,8 +195,8 @@ class SocketAdaptor extends Stream<Uint8List> implements Socket {
   void setRawOption(RawSocketOption option) {}
 
   @override
-  StreamSubscription<Uint8List> listen(void onData(Uint8List event),
-      {Function onError, void onDone(), bool cancelOnError}) {
+  StreamSubscription<Uint8List> listen(void Function(Uint8List event) onData,
+      {Function onError, void Function() onDone, bool cancelOnError}) {
     //debugPrint('DEBUG SocketAdaptor.listen $remoteAddress:$remotePort');
     return controller.stream.listen((m) {
       //debugPrint('DEBUG SocketAdaptor.read $m');
@@ -242,6 +240,7 @@ class SocketAdaptorStreamConsumer extends StreamConsumer<List<int>> {
   Completer streamCompleter;
   SocketAdaptorStreamConsumer(this.socket);
 
+  @override
   Future<Socket> close() {
     //socket._consumerDone();
     return Future.value(socket);
@@ -253,7 +252,7 @@ class SocketAdaptorStreamConsumer extends StreamConsumer<List<int>> {
     subscription = null;
   }
 
-  void done([error, stackTrace]) {
+  void done([dynamic error, StackTrace stackTrace]) {
     if (streamCompleter != null) {
       if (error != null) {
         streamCompleter.completeError(error, stackTrace);
@@ -264,6 +263,7 @@ class SocketAdaptorStreamConsumer extends StreamConsumer<List<int>> {
     }
   }
 
+  @override
   Future<Socket> addStream(Stream<List<int>> stream) {
     streamCompleter = Completer<Socket>();
     if (socket.impl != null) {

@@ -18,8 +18,8 @@ mixin SSHAgentForwarding on SSHTransport {
       Channel channel, Uint8List msg, ChannelInputCallback handleAgentPacket) {
     channel.buf.add(msg);
     while (channel.buf.data.length > 4) {
-      SerializableInput input = SerializableInput(channel.buf.data);
-      int agentPacketLen = input.getUint32();
+      final SerializableInput input = SerializableInput(channel.buf.data);
+      final int agentPacketLen = input.getUint32();
       if (input.remaining < agentPacketLen) break;
       handleAgentPacket(
           channel,
@@ -31,7 +31,7 @@ mixin SSHAgentForwarding on SSHTransport {
 
   // Dispatches SSH Agent messages to handlers.
   void handleAgentPacket(Channel channel, SerializableInput agentPacketS) {
-    int agentPacketId = agentPacketS.getUint8();
+    final int agentPacketId = agentPacketS.getUint8();
     switch (agentPacketId) {
       case AGENTC_REQUEST_IDENTITIES.ID:
         handleAGENTC_REQUEST_IDENTITIES(channel);
@@ -55,7 +55,7 @@ mixin SSHAgentForwarding on SSHTransport {
     if (tracePrint != null) {
       tracePrint('$hostport: agent channel: AGENTC_REQUEST_IDENTITIES');
     }
-    AGENT_IDENTITIES_ANSWER reply = AGENT_IDENTITIES_ANSWER();
+    final AGENT_IDENTITIES_ANSWER reply = AGENT_IDENTITIES_ANSWER();
     if (identity != null) {
       reply.keys = identity.getRawPublicKeyList();
     }
@@ -67,9 +67,9 @@ mixin SSHAgentForwarding on SSHTransport {
     if (tracePrint != null) {
       tracePrint('$hostport: agent channel: AGENTC_SIGN_REQUEST');
     }
-    SerializableInput keyStream = SerializableInput(msg.key);
-    String keyType = deserializeString(keyStream);
-    Uint8List sig =
+    final SerializableInput keyStream = SerializableInput(msg.key);
+    final String keyType = deserializeString(keyStream);
+    final Uint8List sig =
         identity.signMessage(Key.id(keyType), msg.data, getSecureRandom());
     if (sig != null) {
       sendToChannel(channel, AGENT_SIGN_RESPONSE(sig).toRaw());
@@ -84,9 +84,10 @@ abstract class AgentMessage extends Serializable {
   int id;
   AgentMessage(this.id);
 
+  @override
   Uint8List toRaw({Endian endian = Endian.big}) {
-    Uint8List buffer = Uint8List(5 + serializedSize);
-    SerializableOutput output = SerializableOutput(buffer);
+    final Uint8List buffer = Uint8List(5 + serializedSize);
+    final SerializableOutput output = SerializableOutput(buffer);
     output.addUint32(buffer.length - 4);
     output.addUint8(id);
     serialize(output);
@@ -136,7 +137,7 @@ class AGENTC_REQUEST_IDENTITIES extends AgentMessage {
 /// https://tools.ietf.org/html/draft-miller-ssh-agent-03#section-4.4
 class AGENT_IDENTITIES_ANSWER extends AgentMessage {
   static const int ID = 12;
-  List<MapEntry<Uint8List, String>> keys = List<MapEntry<Uint8List, String>>();
+  List<MapEntry<Uint8List, String>> keys = <MapEntry<Uint8List, String>>[];
   AGENT_IDENTITIES_ANSWER() : super(ID);
 
   @override
@@ -149,9 +150,9 @@ class AGENT_IDENTITIES_ANSWER extends AgentMessage {
   @override
   void deserialize(SerializableInput input) {
     keys.clear();
-    int length = input.getUint32();
+    final int length = input.getUint32();
     for (int i = 0; i < length; i++) {
-      Uint8List key = deserializeStringBytes(input);
+      final Uint8List key = deserializeStringBytes(input);
       keys.add(MapEntry<Uint8List, String>(key, deserializeString(input)));
     }
   }
@@ -159,7 +160,7 @@ class AGENT_IDENTITIES_ANSWER extends AgentMessage {
   @override
   void serialize(SerializableOutput output) {
     output.addUint32(keys.length);
-    for (MapEntry<Uint8List, String> key in keys) {
+    for (final MapEntry<Uint8List, String> key in keys) {
       serializeString(output, key.key);
       serializeString(output, key.value);
     }

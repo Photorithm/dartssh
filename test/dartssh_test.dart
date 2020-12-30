@@ -8,8 +8,6 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
-import 'package:test/test.dart';
-
 import 'package:dartssh/client.dart';
 import 'package:dartssh/http.dart';
 import 'package:dartssh/identity.dart';
@@ -19,6 +17,7 @@ import 'package:dartssh/serializable.dart';
 import 'package:dartssh/socket.dart';
 import 'package:dartssh/ssh.dart';
 import 'package:dartssh/websocket_io.dart';
+import 'package:test/test.dart';
 
 import '../example/dartssh.dart' as ssh;
 import '../example/dartsshd.dart' as sshd;
@@ -189,8 +188,8 @@ void main() {
     ]);
 
     String sshResponse = '';
-    StreamController<List<int>> sshInput = StreamController<List<int>>();
-    Future<void> sshMain = ssh.ssh(<String>[
+    final StreamController<List<int>> sshInput = StreamController<List<int>>();
+    final Future<void> sshMain = ssh.ssh(<String>[
       '-l',
       'root',
       '127.0.0.1:42022',
@@ -227,7 +226,7 @@ void main() {
 
     KEX.supported =
         Key.supported = Cipher.supported = MAC.supported = (_) => true;
-    Future<void> sshdMain = sshd.sshd(<String>[
+    final Future<void> sshdMain = sshd.sshd(<String>[
       '-p 42022',
       '-h',
       'test/ssh_host_',
@@ -237,7 +236,7 @@ void main() {
     ]);
 
     String sshResponse = '';
-    StreamController<List<int>> sshInput = StreamController<List<int>>();
+    final StreamController<List<int>> sshInput = StreamController<List<int>>();
     Future<void> sshMain = ssh.ssh(<String>[
       '-l',
       'root',
@@ -264,17 +263,15 @@ void main() {
 }
 
 Future<bool> httpTest(HttpClient httpClient, {String proto = 'https'}) async {
-  var response = await httpClient.request('$proto://www.greenappers.com/');
+  final response = await httpClient.request('$proto://www.greenappers.com/');
   return response != null && response.text.contains('support@greenappers.com');
 }
 
 Future<bool> websocketEchoTest(WebSocketImpl websocket,
     {bool ignoreBadCert = false, String proto = 'wss'}) async {
   final Completer<String> connectCompleter = Completer<String>();
-  websocket.connect(
-      Uri.parse('$proto://echo.websocket.org'),
-      () => connectCompleter.complete(null),
-      (String error) => connectCompleter.complete(error),
+  websocket.connect(Uri.parse('$proto://echo.websocket.org'),
+      () => connectCompleter.complete(null), connectCompleter.complete,
       ignoreBadCert: ignoreBadCert);
   final String error = await connectCompleter.future;
   if (error != null) return false;
@@ -283,8 +280,8 @@ Future<bool> websocketEchoTest(WebSocketImpl websocket,
   final String challenge =
       'websocketEchoTest ${base64.encode(randBytes(Random.secure(), 16))}';
   websocket.listen((Uint8List m) => responseCompleter.complete(utf8.decode(m)));
-  websocket.handleError((String m) => responseCompleter.complete(m));
-  websocket.handleDone((String m) => responseCompleter.complete(m));
+  websocket.handleError(responseCompleter.complete);
+  websocket.handleDone(responseCompleter.complete);
   websocket.send(challenge);
   final String response = await responseCompleter.future;
   websocket.close();

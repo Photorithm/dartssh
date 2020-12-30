@@ -8,16 +8,15 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:args/args.dart';
-import 'package:stack_trace/stack_trace.dart';
-
 import 'package:dartssh/agent.dart';
 import 'package:dartssh/identity.dart';
 import 'package:dartssh/pem.dart';
 import 'package:dartssh/protocol.dart';
-import 'package:dartssh/socket_io.dart';
 import 'package:dartssh/server.dart';
+import 'package:dartssh/socket_io.dart';
 import 'package:dartssh/ssh.dart';
 import 'package:dartssh/transport.dart';
+import 'package:stack_trace/stack_trace.dart';
 
 SSHServer server;
 
@@ -59,11 +58,11 @@ Future<void> sshd(List<String> arguments) async {
     await Chain.capture(() async {
       final ServerSocket listener = await ServerSocket.bind('0.0.0.0', port);
 
-      await for (Socket socket in listener) {
+      await for (final Socket socket in listener) {
         final String hostport =
             '${socket.remoteAddress.host}:${socket.remotePort}';
         print('accepted $hostport');
-        StreamController<String> input = StreamController<String>();
+        final StreamController<String> input = StreamController<String>();
         bool done = false;
         Future pending;
 
@@ -79,7 +78,7 @@ Future<void> sshd(List<String> arguments) async {
             server.sendChannelData(utf8.encode(v));
           },
           userAuthRequest: (MSG_USERAUTH_REQUEST msg) {
-            String requirePassword = args['password'];
+            final String requirePassword = args['password'];
             if ((requirePassword ?? '').isEmpty) {
               /// Graciously accept all authorization requests.
               return true;
@@ -107,14 +106,14 @@ Future<void> sshd(List<String> arguments) async {
           directTcpRequest: forwardTcp ? forwardTcpChannel : null,
         );
 
-        input.stream.transform(LineSplitter()).listen((String line) {
+        input.stream.transform(const LineSplitter()).listen((String line) {
           if (done) return;
           if (line == 'exit') {
             done = true;
             pending = chainWork(pending,
                 () async => server.closeChannel(server.sessionChannel));
           } else if (line == 'testAgent') {
-            pending = chainWork(pending, () => testAgentForwarding());
+            pending = chainWork(pending, testAgentForwarding);
           } else if (line == 'testDebug') {
             server.writeCipher(MSG_DEBUG());
             server.writeCipher(MSG_IGNORE());
@@ -133,7 +132,7 @@ Future chainWork(Future chain, FutureFunction x) =>
     chain == null ? x() : chain.then((_) async => await x());
 
 Identity loadHostKey({StringFunction getPassword, String path}) {
-  Identity hostkey = Identity();
+  final Identity hostkey = Identity();
   path ??= '/etc/ssh/ssh_host_';
   try {
     parsePem(File('${path}ecdsa_key').readAsStringSync(),
@@ -158,19 +157,19 @@ Identity loadHostKey({StringFunction getPassword, String path}) {
 
 Future<String> forwardTcpChannel(Channel channel, String sourceHost,
     int sourcePort, String targetHost, int targetPort) async {
-  SocketImpl tunneledSocket = SocketImpl();
-  Completer<String> connectCompleter = Completer<String>();
+  final SocketImpl tunneledSocket = SocketImpl();
+  final Completer<String> connectCompleter = Completer<String>();
   print('dartsshd: Forwarding connection to $targetHost:$targetPort');
   tunneledSocket.connect(
       Uri.parse('tcp://$targetHost:$targetPort'),
       () => connectCompleter.complete(null),
       (String error) => connectCompleter.complete('$error'));
-  String connectError = await connectCompleter.future;
+  final String connectError = await connectCompleter.future;
   if (connectError != null) return connectError;
 
-  StringCallback closeTunneledSocket = (String error) {
+  final StringCallback closeTunneledSocket = (String error) {
     print(
-        "dartsshd: Closing forwarded connection to $targetHost:$targetPort: $error");
+        'dartsshd: Closing forwarded connection to $targetHost:$targetPort: $error');
     tunneledSocket.close();
     server.closeChannel(channel);
   };
@@ -187,15 +186,15 @@ Future<String> forwardTcpChannel(Channel channel, String sourceHost,
 Future testAgentForwarding() async {
   Channel agentChannel;
   Uint8List key, challenge;
-  Completer<String> openCompleter = Completer<String>();
-  Completer<String> doneCompleter = Completer<String>();
+  final Completer<String> openCompleter = Completer<String>();
+  final Completer<String> doneCompleter = Completer<String>();
   agentChannel = server.openAgentChannel(
     (_, Uint8List read) => SSHAgentForwarding.dispatchAgentRead(
         agentChannel, read, (_, agentPacketS) {
-      int agentPacketId = agentPacketS.getUint8();
+      final int agentPacketId = agentPacketS.getUint8();
       switch (agentPacketId) {
         case AGENT_IDENTITIES_ANSWER.ID:
-          AGENT_IDENTITIES_ANSWER msg = AGENT_IDENTITIES_ANSWER()
+          final AGENT_IDENTITIES_ANSWER msg = AGENT_IDENTITIES_ANSWER()
             ..deserialize(agentPacketS);
           assert(msg.keys.isNotEmpty);
           key = msg.keys.first.key;
@@ -205,7 +204,7 @@ Future testAgentForwarding() async {
           break;
 
         case AGENT_SIGN_RESPONSE.ID:
-          AGENT_SIGN_RESPONSE msg = AGENT_SIGN_RESPONSE()
+          final AGENT_SIGN_RESPONSE msg = AGENT_SIGN_RESPONSE()
             ..deserialize(agentPacketS);
           assert(msg.sig.isNotEmpty);
           doneCompleter.complete(null);
@@ -218,13 +217,13 @@ Future testAgentForwarding() async {
     connected: () => openCompleter.complete(null),
     error: (String error) => openCompleter.complete('$error'),
   );
-  String openError = await openCompleter.future;
+  final String openError = await openCompleter.future;
   if (openError != null) {
     server.sendChannelData(utf8.encode('error: $openError\n'));
     return;
   }
   server.sendToChannel(agentChannel, AGENTC_REQUEST_IDENTITIES().toRaw());
-  String doneError = await doneCompleter.future;
+  final String doneError = await doneCompleter.future;
   if (doneError == null) {
     server.sendChannelData(utf8.encode('success\n'));
   } else {

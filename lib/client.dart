@@ -1,11 +1,9 @@
 // Copyright 2019 dartssh developers
 // Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 
-import 'dart:math';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
-
-import "package:pointycastle/api.dart";
 
 import 'package:dartssh/agent.dart';
 import 'package:dartssh/identity.dart';
@@ -19,6 +17,7 @@ import 'package:dartssh/ssh.dart';
 import 'package:dartssh/transport.dart';
 import 'package:dartssh/websocket_html.dart'
     if (dart.library.io) 'package:dartssh/websocket_io.dart';
+import 'package:pointycastle/api.dart';
 
 /// The Secure Shell (SSH) is a protocol for secure remote login and
 /// other secure network services over an insecure network.
@@ -368,15 +367,15 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
 
     if (compressIdC2s == Compression.OpenSSHZLib) {
       // zwriter = ArchiveDeflateWriter();
-      throw FormatException('compression not supported');
+      throw const FormatException('compression not supported');
     }
     if (compressIdS2c == Compression.OpenSSHZLib) {
       // zreader = ArchiveInflateReader();
-      throw FormatException('compression not supported');
+      throw const FormatException('compression not supported');
     }
     writeCipher(MSG_CHANNEL_OPEN(
         'session', sessionChannel.localId, initialWindowSize, maxPacketSize));
-    for (VoidCallback successCallback in success) {
+    for (final VoidCallback successCallback in success) {
       successCallback();
     }
   }
@@ -394,7 +393,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
       response(this, msg.instruction);
     }
 
-    for (MapEntry<String, int> prompt in msg.prompts) {
+    for (final MapEntry<String, int> prompt in msg.prompts) {
       if (tracePrint != null) {
         tracePrint('$hostport: prompt: ${prompt.key}');
       }
@@ -405,7 +404,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
       passwordPrompts = msg.prompts.length;
       getThenSendPassword();
     } else {
-      writeCipher(MSG_USERAUTH_INFO_RESPONSE(List<Uint8List>()));
+      writeCipher(MSG_USERAUTH_INFO_RESPONSE(<Uint8List>[]));
     }
   }
 
@@ -424,14 +423,14 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
       tracePrint('$hostport: MSG_CHANNEL_OPEN type=${msg.channelType}');
     }
     if (msg.channelType == 'auth-agent@openssh.com' && agentForwarding) {
-      Channel channel = acceptChannel(msg);
+      final Channel channel = acceptChannel(msg);
       channel.agentChannel = true;
       writeCipher(MSG_CHANNEL_OPEN_CONFIRMATION(
           channel.remoteId, channel.localId, channel.windowS, maxPacketSize));
     } else if (msg.channelType == 'forwarded-tcpip') {
-      MSG_CHANNEL_OPEN_TCPIP openTcpIp = MSG_CHANNEL_OPEN_TCPIP()
+      final MSG_CHANNEL_OPEN_TCPIP openTcpIp = MSG_CHANNEL_OPEN_TCPIP()
         ..deserialize(packetS);
-      Forward forward =
+      final Forward forward =
           forwardingRemote == null ? null : forwardingRemote[openTcpIp.dstPort];
       if (forward == null || remoteForward == null) {
         if (print != null) {
@@ -439,7 +438,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
         }
         writeCipher(MSG_CHANNEL_OPEN_FAILURE(msg.senderChannel, 0, '', ''));
       } else {
-        Channel channel = acceptChannel(msg);
+        final Channel channel = acceptChannel(msg);
         remoteForward(channel, forward.targetHost, forward.targetPort,
             openTcpIp.srcHost, openTcpIp.srcPort);
         writeCipher(MSG_CHANNEL_OPEN_CONFIRMATION(
@@ -454,6 +453,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   }
 
   /// Handles successfully opened client-initiated [Channel].
+  @override
   void handleChannelOpenConfirmation(Channel channel) {
     if (channel == sessionChannel) {
       handleSessionStarted();
@@ -470,7 +470,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
     }
 
     if (forwardRemote != null) {
-      for (Forward forward in forwardRemote) {
+      for (final Forward forward in forwardRemote) {
         writeCipher(MSG_GLOBAL_REQUEST_TCPIP('', forward.port));
         forwardingRemote[forward.port] = forward;
       }
@@ -551,7 +551,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
       writeCipher(MSG_USERAUTH_REQUEST(
           login, 'ssh-connection', 'password', '', pw, Uint8List(0)));
     } else {
-      List<Uint8List> prompt =
+      final List<Uint8List> prompt =
           List<Uint8List>.filled(passwordPrompts, Uint8List(0));
       prompt.last = pw;
       writeCipher(MSG_USERAUTH_INFO_RESPONSE(prompt));
@@ -572,21 +572,21 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
       if (debugPrint != null) {
         debugPrint('$hostport: Sending Ed25519 authorization request');
       }
-      Uint8List pubkey = identity.getEd25519PublicKey().toRaw();
-      Uint8List challenge = deriveChallenge(sessionId, login, 'ssh-connection',
-          'publickey', 'ssh-ed25519', pubkey);
-      Ed25519Signature sig = identity.signWithEd25519Key(challenge);
+      final Uint8List pubkey = identity.getEd25519PublicKey().toRaw();
+      final Uint8List challenge = deriveChallenge(sessionId, login,
+          'ssh-connection', 'publickey', 'ssh-ed25519', pubkey);
+      final Ed25519Signature sig = identity.signWithEd25519Key(challenge);
       writeCipher(MSG_USERAUTH_REQUEST(login, 'ssh-connection', 'publickey',
           'ssh-ed25519', pubkey, sig.toRaw()));
     } else if (identity.ecdsaPrivate != null) {
       if (debugPrint != null) {
         debugPrint('$hostport: Sending ECDSA authorization request');
       }
-      String keyType = Key.name(identity.ecdsaKeyType);
-      Uint8List pubkey = identity.getECDSAPublicKey().toRaw();
-      Uint8List challenge = deriveChallenge(
+      final String keyType = Key.name(identity.ecdsaKeyType);
+      final Uint8List pubkey = identity.getECDSAPublicKey().toRaw();
+      final Uint8List challenge = deriveChallenge(
           sessionId, login, 'ssh-connection', 'publickey', keyType, pubkey);
-      ECDSASignature sig =
+      final ECDSASignature sig =
           identity.signWithECDSAKey(challenge, getSecureRandom());
       writeCipher(MSG_USERAUTH_REQUEST(
           login, 'ssh-connection', 'publickey', keyType, pubkey, sig.toRaw()));
@@ -594,10 +594,10 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
       if (debugPrint != null) {
         debugPrint('$hostport: Sending RSA authorization request');
       }
-      Uint8List pubkey = identity.getRSAPublicKey().toRaw();
-      Uint8List challenge = deriveChallenge(
+      final Uint8List pubkey = identity.getRSAPublicKey().toRaw();
+      final Uint8List challenge = deriveChallenge(
           sessionId, login, 'ssh-connection', 'publickey', 'ssh-rsa', pubkey);
-      RSASignature sig = identity.signWithRSAKey(challenge);
+      final RSASignature sig = identity.signWithRSAKey(challenge);
       writeCipher(MSG_USERAUTH_REQUEST(login, 'ssh-connection', 'publickey',
           'ssh-rsa', pubkey, sig.toRaw()));
     }
@@ -609,7 +609,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   void sendChannelData(Uint8List b) {
     if (loginPrompts != 0) {
       response(this, utf8.decode(b));
-      bool cr = b.isNotEmpty && b.last == '\n'.codeUnits[0];
+      final bool cr = b.isNotEmpty && b.last == '\n'.codeUnits[0];
       login += String.fromCharCodes(b, 0, b.length - (cr ? 1 : 0));
       if (cr) {
         response(this, '\n');
@@ -617,7 +617,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
         sendAuthenticationRequest();
       }
     } else if (passwordPrompts != 0) {
-      bool cr = b.isNotEmpty && b.last == '\n'.codeUnits[0];
+      final bool cr = b.isNotEmpty && b.last == '\n'.codeUnits[0];
       pw = appendUint8List(
           pw ?? Uint8List(0), viewUint8List(b, 0, b.length - (cr ? 1 : 0)));
       if (cr) sendPassword();

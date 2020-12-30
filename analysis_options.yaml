@@ -1,1 +1,69 @@
-include: package:pedantic/analysis_options.1.8.0.yaml
+include: package:pedantic/analysis_options.yaml
+
+analyzer:
+  errors:
+    must_be_immutable: error
+    missing_required_param: error
+    unawaited_futures: error
+    unrelated_type_equality_checks: error
+    list_remove_unrelated_type: error
+    iterable_contains_unrelated_type: error
+    prefer_typing_uninitialized_variables: warning
+    type_annotate_public_apis: warning
+    only_throw_errors: warning
+    close_sinks: warning
+    cancel_subscriptions: warning
+
+#   strong-mode:
+#     implicit-casts: false  #this is great, but makes working with dynamic way too messy
+#     implicit-dynamic: true
+
+linter:
+  rules:
+    # error rules
+    cancel_subscriptions: true
+    close_sinks: true
+    control_flow_in_finally: true
+    empty_statements: true
+    hash_and_equals: true
+    iterable_contains_unrelated_type: true
+    list_remove_unrelated_type: true
+    prefer_void_to_null: true
+    test_types_in_equals: true
+    throw_in_finally: true
+    unnecessary_statements: true
+
+    # style rules
+    always_put_required_named_parameters_first: true
+    avoid_equals_and_hash_code_on_mutable_classes: true
+    avoid_single_cascade_in_expression_statements: true
+    avoid_unused_constructor_parameters: true
+    await_only_futures: true
+    directives_ordering: true
+    file_names: true
+    implementation_imports: true
+    only_throw_errors: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    prefer_const_constructors_in_immutables: true
+    prefer_final_in_for_each: true
+    prefer_final_locals: true
+    prefer_initializing_formals: true
+    prefer_is_not_operator: true
+    prefer_spread_collections: true
+    prefer_typing_uninitialized_variables: true
+    type_annotate_public_apis: true
+    unnecessary_brace_in_string_interps: true
+    unnecessary_getters_setters: true
+    unnecessary_lambdas: true
+    
+    use_is_even_rather_than_modulo: true
+
+    #override normal style
+    camel_case_types: false
+    non_constant_identifier_names: false
+    unnecessary_parenthesis: false
+
+    # override pedantic
+    omit_local_variable_types: false
+    unnecessary_this: false
