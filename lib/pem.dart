@@ -18,24 +18,24 @@ import 'package:pointycastle/ecc/api.dart';
 /// Privacy-Enhanced Mail (PEM) is a de facto file format for storing and sending
 /// cryptographic keys, certificates, and other data.
 Identity parsePem(String text,
-    {StringFunction getPassword, Identity identity}) {
+    {StringFunction? getPassword, Identity? identity}) {
   identity ??= Identity();
   const String beginText = '-----BEGIN ',
       endText = '-----END ',
       termText = '-----';
   int beginBegin, beginEnd, endBegin, endEnd;
   if ((beginBegin = text.indexOf(beginText)) == -1) {
-    throw FormatException('missing $beginText');
+    throw const FormatException('missing $beginText');
   }
   if ((beginEnd = text.indexOf(termText, beginBegin + beginText.length)) ==
       -1) {
-    throw FormatException('missing $termText');
+    throw const FormatException('missing $termText');
   }
   if ((endBegin = text.indexOf(endText, beginEnd + termText.length)) == -1) {
-    throw FormatException('missing $endText');
+    throw const FormatException('missing $endText');
   }
   if ((endEnd = text.indexOf(termText, endBegin + endText.length)) == -1) {
-    throw FormatException('missing $termText');
+    throw const FormatException('missing $termText');
   }
 
   String type = text.substring(beginBegin + beginText.length, beginEnd);
@@ -89,7 +89,8 @@ Identity parsePem(String text,
           }
           privateKey = opensshKeyCrypt(
               false,
-              (getPassword != null ? getPassword() : '').codeUnits,
+              Uint8List.fromList(
+                  (getPassword != null ? getPassword() : '').codeUnits),
               kdfoptions.salt,
               kdfoptions.rounds,
               openssh.privatekey,

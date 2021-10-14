@@ -3,6 +3,10 @@
 
 import 'dart:typed_data';
 
+import 'package:dartssh/identity.dart';
+import 'package:dartssh/kex.dart';
+import 'package:dartssh/protocol.dart';
+import 'package:dartssh/serializable.dart';
 import 'package:pointycastle/api.dart' hide Signature;
 import 'package:pointycastle/block/aes_fast.dart';
 import 'package:pointycastle/block/modes/cbc.dart';
@@ -19,11 +23,6 @@ import 'package:pointycastle/ecc/curves/secp521r1.dart';
 import 'package:pointycastle/macs/hmac.dart';
 import 'package:pointycastle/src/utils.dart';
 import 'package:pointycastle/stream/ctr.dart';
-
-import 'package:dartssh/identity.dart';
-import 'package:dartssh/kex.dart';
-import 'package:dartssh/protocol.dart';
-import 'package:dartssh/serializable.dart';
 
 typedef NameFunction = String Function(int);
 typedef SupportedFunction = bool Function(int);
@@ -71,7 +70,7 @@ String preferenceIntersection(String intersectCsv, String supportedCsv,
 
 /// Limits cipher suite support to the specified parameter, if not null.
 void applyCipherSuiteOverrides(
-    String kex, String key, String cipher, String mac) {
+    String? kex, String? key, String? cipher, String? mac) {
   if (kex != null) {
     final int kexOverride = KEX.id(kex);
     if (kexOverride == 0) {
@@ -116,7 +115,7 @@ class Key {
       RSA = 5,
       End = 5;
 
-  static int id(String name) {
+  static int id(String? name) {
     if (name == null) return 0;
     switch (name) {
       case 'ssh-ed25519':
@@ -233,7 +232,7 @@ class KEX {
       End = 8;
 
   static int id(String name) {
-    if (name == null) return 0;
+    // if (name == null) return 0;
     switch (name) {
       case 'curve25519-sha256@libssh.org':
         return ECDH_SHA2_X25519;
@@ -354,7 +353,7 @@ class Cipher {
       AES256_CBC = 4,
       End = 4;
 
-  static int id(String name) {
+  static int id(String? name) {
     if (name == null) return 0;
     switch (name) {
       case 'aes128-ctr':
@@ -456,7 +455,7 @@ class MAC {
       SHA512_96 = 8,
       End = 8;
 
-  static int id(String name) {
+  static int id(String? name) {
     if (name == null) return 0;
     switch (name) {
       case 'hmac-md5':
@@ -588,7 +587,7 @@ class MAC {
 class Compression {
   static const int OpenSSHZLib = 1, None = 2, End = 2;
 
-  static int id(String name) {
+  static int id(String? name) {
     if (name == null) return 0;
     switch (name) {
       case 'zlib@openssh.com':

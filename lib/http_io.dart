@@ -13,14 +13,14 @@ class HttpClientImpl extends HttpClient {
   static const String type = 'io';
   io.HttpClient client = io.HttpClient();
 
-  HttpClientImpl({StringCallback debugPrint, StringFilter userAgent})
+  HttpClientImpl({StringCallback debugPrint, StringFilter? userAgent})
       : super(debugPrint: debugPrint) {
     if (userAgent != null) client.userAgent = userAgent(client.userAgent);
   }
 
   @override
   Future<HttpResponse> request(String url,
-      {String method, String data, Map<String, String> headers}) async {
+      {String method, String data, Map<String, String>? headers}) async {
     numOutstanding++;
 
     final Uri uri = Uri.parse(url);

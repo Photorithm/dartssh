@@ -23,11 +23,12 @@ import 'package:pointycastle/api.dart';
 /// other secure network services over an insecure network.
 class SSHClient extends SSHTransport with SSHAgentForwarding {
   // Parameters
-  String login, termvar, startupCommand;
+  String? login;
+  String termvar, startupCommand;
   bool agentForwarding, closeOnDisconnect, startShell;
-  FingerprintCallback acceptHostFingerprint;
+  FingerprintCallback? acceptHostFingerprint;
   Uint8ListFunction? getPassword;
-  IdentityFunction loadIdentity;
+  IdentityFunction? loadIdentity;
   List<VoidCallback> success = <VoidCallback>[];
 
   // State
@@ -532,7 +533,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
 
   /// Calls [sendPassword()] if [getPassword] succeeds.
   void getThenSendPassword() {
-    if (getPassword != null && (pw = getPassword()) != null) sendPassword();
+    if (getPassword != null && (pw = getPassword!()) != null) sendPassword();
   }
 
   /// "Securely" clears the local password storage.
@@ -569,7 +570,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
       }
       writeCipher(MSG_USERAUTH_REQUEST(login, 'ssh-connection',
           'keyboard-interactive', '', Uint8List(0), Uint8List(0)));
-    } else if (identity.ed25519 != null) {
+    } else if (identity!.ed25519 != null) {
       if (debugPrint != null) {
         debugPrint('$hostport: Sending Ed25519 authorization request');
       }

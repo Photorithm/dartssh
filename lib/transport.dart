@@ -23,7 +23,7 @@ typedef StringCallback = void Function(String?);
 typedef StringFunction = String Function();
 typedef StringFilter = String Function(String);
 typedef Uint8ListCallback = void Function(Uint8List);
-typedef Uint8ListFunction = Uint8List Function();
+typedef Uint8ListFunction = Uint8List? Function();
 typedef IdentityFunction = Identity? Function();
 typedef FingerprintCallback = bool Function(int, Uint8List);
 typedef ChannelCallback = void Function(Channel, Uint8List);
@@ -44,7 +44,8 @@ class Forward {
 /// [Channel]s are flow-controlled.  No data may be sent to a channel until
 /// a message is received to indicate that window space is available.
 class Channel {
-  int localId, remoteId, windowC, windowS;
+  int localId, windowC, windowS;
+  int? remoteId;
   bool opened = true, agentChannel = false, sentEof = false, sentClose = false;
   QueueBuffer buf = QueueBuffer(Uint8List(0));
   ChannelCallback? cb;
@@ -92,7 +93,7 @@ abstract class SSHTransport with SSHDiffieHellman {
   SecureRandom? secureRandom;
 
   /// Parameter invoked on connection close.
-  VoidCallback disconnected;
+  VoidCallback? disconnected;
 
   /// Parameter invoked with session channel data (and optionally UI prompts).
   ResponseCallback response;
@@ -110,7 +111,7 @@ abstract class SSHTransport with SSHDiffieHellman {
   List<Forward> forwardLocal;
 
   /// Parameter describing remote ports to forward over SSH tunnel.
-  List<Forward> forwardRemote;
+  List<Forward>? forwardRemote;
 
   /// Paramter invoked upon connection to forwarded remote port.
   RemoteForwardCallback? remoteForward;
@@ -504,7 +505,7 @@ abstract class SSHTransport with SSHDiffieHellman {
           '$hostport: MSG_CHANNEL_OPEN_CONFIRMATION local_id=${msg.recipientChannel} remote_id=${msg.senderChannel}');
     }
 
-    Channel chan = channels[msg.recipientChannel];
+    Channel? chan = channels[msg.recipientChannel];
     if (chan == null || chan.remoteId == null) {
       throw FormatException('$hostport: open invalid channel');
     }
@@ -517,11 +518,11 @@ abstract class SSHTransport with SSHDiffieHellman {
   /// If the remote side can't open the channel, it responds with SSH_MSG_CHANNEL_OPEN_FAILURE.
   void handleMSG_CHANNEL_OPEN_FAILURE(MSG_CHANNEL_OPEN_FAILURE msg) {
     if (tracePrint != null) {
-      tracePrint(
+      tracePrint!(
           '$hostport: MSG_CHANNEL_OPEN_FAILURE local_id=${msg.recipientChannel}');
     }
 
-    Channel chan = channels[msg.recipientChannel];
+    Channel? chan = channels[msg.recipientChannel];
     if (chan == null || chan.remoteId == null) {
       throw FormatException('$hostport: fail invalid channel');
     }
@@ -534,10 +535,10 @@ abstract class SSHTransport with SSHDiffieHellman {
   /// more than it was previously allowed to send; the window size is incremented.
   void handleMSG_CHANNEL_WINDOW_ADJUST(MSG_CHANNEL_WINDOW_ADJUST msg) {
     if (tracePrint != null) {
-      tracePrint(
+      tracePrint!(
           '$hostport: MSG_CHANNEL_WINDOW_ADJUST add ${msg.bytesToAdd} to channel ${msg.recipientChannel}');
     }
-    Channel chan = channels[msg.recipientChannel];
+    Channel? chan = channels[msg.recipientChannel];
     if (chan == null) {
       throw FormatException('$hostport: window adjust invalid channel');
     }
@@ -547,10 +548,10 @@ abstract class SSHTransport with SSHDiffieHellman {
   /// Data transfer is done with messages of the type SSH_MSG_CHANNEL_DATA.
   void handleMSG_CHANNEL_DATA(MSG_CHANNEL_DATA msg) {
     if (tracePrint != null) {
-      tracePrint(
+      tracePrint!(
           '$hostport: MSG_CHANNEL_DATA: channel ${msg.recipientChannel} : ${msg.data.length} bytes');
     }
-    Channel chan = channels[msg.recipientChannel];
+    Channel? chan = channels[msg.recipientChannel];
     if (chan == null) {
       throw FormatException('$hostport: data for invalid channel');
     }
@@ -567,12 +568,12 @@ abstract class SSHTransport with SSHDiffieHellman {
   /// may send EOF to whatever is at the other end of the channel.
   void handleMSG_CHANNEL_EOF(MSG_CHANNEL_EOF msg) {
     if (tracePrint != null) {
-      tracePrint('$hostport: MSG_CHANNEL_EOF ${msg.recipientChannel}');
+      tracePrint!('$hostport: MSG_CHANNEL_EOF ${msg.recipientChannel}');
     }
-    Channel chan = channels[msg.recipientChannel];
+    Channel? chan = channels[msg.recipientChannel];
     if (chan == null) {
       if (print != null) {
-        print('$hostport: close invalid channel');
+        print!('$hostport: close invalid channel');
         return;
       }
     }
@@ -588,7 +589,7 @@ abstract class SSHTransport with SSHDiffieHellman {
     if (tracePrint != null) {
       tracePrint('$hostport: MSG_CHANNEL_CLOSE ${msg.recipientChannel}');
     }
-    Channel chan = channels[msg.recipientChannel];
+    Channel? chan = channels[msg.recipientChannel];
     if (chan == null) {
       if (print != null) {
         print('$hostport: Close invalid channel');

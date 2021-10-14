@@ -104,7 +104,7 @@ class SocketImpl extends SocketInterface {
 
 /// https://github.com/dart-lang/sdk/blob/master/sdk/lib/_internal/vm/bin/socket_patch.dart#L1651
 class SocketAdaptor extends Stream<Uint8List> implements Socket {
-  SocketInterface impl;
+  SocketInterface? impl;
   StreamController<Uint8List> controller;
   SocketAdaptorStreamConsumer consumer;
   IOSink sink;
@@ -237,7 +237,7 @@ class SocketAdaptor extends Stream<Uint8List> implements Socket {
 class SocketAdaptorStreamConsumer extends StreamConsumer<List<int>> {
   final SocketAdaptor socket;
   StreamSubscription? subscription;
-  Completer? streamCompleter;
+  Completer<Socket>? streamCompleter;
   SocketAdaptorStreamConsumer(this.socket);
 
   @override
@@ -264,7 +264,7 @@ class SocketAdaptorStreamConsumer extends StreamConsumer<List<int>> {
   }
 
   @override
-  Future<Socket> addStream(Stream<List<int>> stream) {
+  Future<Socket> addStream(Stream<List<int>?> stream) {
     streamCompleter = Completer<Socket>();
     if (socket.impl != null) {
       subscription = stream.listen((data) {
@@ -281,11 +281,9 @@ class SocketAdaptorStreamConsumer extends StreamConsumer<List<int>> {
       }, onError: (error, [stackTrace]) {
         socket.destroy();
         done(error, stackTrace);
-      }, onDone: () {
-        done();
-      }, cancelOnError: true);
+      }, onDone: done, cancelOnError: true);
     }
-    return streamCompleter.future;
+    return streamCompleter!.future;
   }
 }
 

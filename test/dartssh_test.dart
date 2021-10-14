@@ -271,7 +271,7 @@ Future<bool> websocketEchoTest(WebSocketImpl websocket,
   websocket.connect(Uri.parse('$proto://echo.websocket.org'),
       () => connectCompleter.complete(null), connectCompleter.complete,
       ignoreBadCert: ignoreBadCert);
-  final String error = await connectCompleter.future;
+  final String? error = await connectCompleter.future;
   if (error != null) return false;
 
   final Completer<String> responseCompleter = Completer<String>();

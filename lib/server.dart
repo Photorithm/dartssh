@@ -20,10 +20,10 @@ typedef GexRequest = MapEntry<BigInt, BigInt> Function(MSG_KEX_DH_GEX_REQUEST);
 
 class SSHServer extends SSHTransport {
   // Parameters
-  RemoteForwardCallback directTcpRequest;
-  UserAuthRequest userAuthRequest;
+  RemoteForwardCallback? directTcpRequest;
+  UserAuthRequest? userAuthRequest;
   ChannelRequest? sessionChannelRequest;
-  GexRequest gexRequest;
+  GexRequest? gexRequest;
 
   SSHServer(Identity hostkey,
       {Uri hostport,
@@ -188,8 +188,7 @@ class SSHServer extends SSHTransport {
   }
 
   void handleMSG_KEX_DH_GEX_REQUEST(MSG_KEX_DH_GEX_REQUEST msg) {
-    MapEntry<BigInt, BigInt> group =
-        gexRequest == null ? null : gexRequest(msg);
+    MapEntry<BigInt, BigInt>? group = gexRequest?.call(msg);
     if (group == null) {
       DiffieHellman group14 = DiffieHellman.group14();
       group = MapEntry<BigInt, BigInt>(group14.p, group14.g);
@@ -224,11 +223,11 @@ class SSHServer extends SSHTransport {
 
   void handleMSG_CHANNEL_OPEN(MSG_CHANNEL_OPEN msg, SerializableInput packetS) {
     if (tracePrint != null) {
-      tracePrint('$hostport: MSG_CHANNEL_OPEN type=${msg.channelType}');
+      tracePrint!('$hostport: MSG_CHANNEL_OPEN type=${msg.channelType}');
     }
     if (msg.channelType == 'session') {
       if (sessionChannel != null) {
-        throw FormatException('already started session');
+        throw const FormatException('already started session');
       }
       sessionChannel = acceptChannel(msg);
       writeCipher(MSG_CHANNEL_OPEN_CONFIRMATION(sessionChannel.remoteId,

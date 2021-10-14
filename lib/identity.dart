@@ -15,12 +15,12 @@ import 'package:pointycastle/signers/ecdsa_signer.dart';
 import 'package:pointycastle/signers/rsa_signer.dart';
 
 class Identity {
-  tweetnacl.KeyPair ed25519;
+  tweetnacl.KeyPair? ed25519;
   int ecdsaKeyType;
-  ECPublicKey ecdsaPublic;
-  ECPrivateKey ecdsaPrivate;
-  asymmetric.RSAPublicKey rsaPublic;
-  asymmetric.RSAPrivateKey rsaPrivate;
+  ECPublicKey? ecdsaPublic;
+  ECPrivateKey? ecdsaPrivate;
+  asymmetric.RSAPublicKey? rsaPublic;
+  asymmetric.RSAPrivateKey? rsaPrivate;
 
   Ed25519Key getEd25519PublicKey() => Ed25519Key(ed25519.publicKey);
 
@@ -82,7 +82,7 @@ class Identity {
   }
 
   List<MapEntry<Uint8List, String>> getRawPublicKeyList() {
-    List<MapEntry<Uint8List, String>> ret = List<MapEntry<Uint8List, String>>();
+    List<MapEntry<Uint8List, String>> ret = <MapEntry<Uint8List, String>>[];
     if (ed25519 != null) {
       ret.add(MapEntry<Uint8List, String>(getEd25519PublicKey().toRaw(), ''));
     }

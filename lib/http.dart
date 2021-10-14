@@ -26,7 +26,8 @@ class HttpRequest {
 /// HTTP response integrating [io.HttpClient] and [html.HttpRequest].
 class HttpResponse {
   int status, contentLength;
-  String text, reason;
+  String? text;
+  String reason;
   Map<String, String> headers;
   Stream<List<int>> contentStream;
   HttpResponse(this.status,
@@ -40,10 +41,10 @@ class HttpResponse {
 /// HTTP client integrating [io.HttpClient] and [html.HttpRequest].
 abstract class HttpClient {
   int numOutstanding = 0;
-  StringCallback debugPrint;
+  StringCallback? debugPrint;
   HttpClient({this.debugPrint});
 
-  Future<HttpResponse> request(String url,
+  Future<HttpResponse?> request(String url,
       {String method, String data, Map<String, String> headers});
 }
 
@@ -62,9 +63,9 @@ class TestHttpClient extends HttpClient {
 
 /// package:http based implementation of [HttpClient].
 class HttpClientImpl extends HttpClient {
-  HttpClientFactory clientFactory;
+  HttpClientFactory? clientFactory;
   HttpClientImpl(
-      {this.clientFactory, StringCallback debugPrint, StringFilter userAgent})
+      {this.clientFactory, StringCallback debugPrint, StringFilter? userAgent})
       : super(debugPrint: debugPrint) {
     clientFactory ??= () => UserAgentBaseClient(
         userAgent == null ? null : userAgent('HttpClientImpl'), http.Client());
@@ -114,14 +115,14 @@ class HttpClientImpl extends HttpClient {
 /// [http.BaseClient] with [userAgent] header.
 /// Reference: https://github.com/dart-lang/http/blob/master/README.md
 class UserAgentBaseClient extends http.BaseClient {
-  final String userAgent;
+  final String? userAgent;
   final http.Client inner;
   UserAgentBaseClient(this.userAgent, this.inner);
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {
     if (userAgent != null) {
-      request.headers['user-agent'] = userAgent;
+      request.headers['user-agent'] = userAgent!;
     }
     return inner.send(request);
   }
@@ -129,14 +130,14 @@ class UserAgentBaseClient extends http.BaseClient {
 
 /// [http.BaseClient] running over [SSHTunneledSocketImpl].
 class SSHTunneledBaseClient extends http.BaseClient {
-  final String userAgent;
+  final String? userAgent;
   final SSHClient client;
   SSHTunneledBaseClient(this.client, {this.userAgent});
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     if (userAgent != null) {
-      request.headers['user-agent'] = userAgent;
+      request.headers['user-agent'] = userAgent!;
     }
 
     final HttpResponse response = await httpRequest(
@@ -172,12 +173,12 @@ Map<String, String> addBasicAuthenticationHeader(
 }
 
 Future<SocketInterface> connectUri(Uri uri, SocketInterface socket,
-    {SocketFilter secureUpgrade}) async {
+    {SocketFilter? secureUpgrade}) async {
   /// We might be asking the remote to open an SSH tunnel to [uri].
   final Completer<String> connectCompleter = Completer<String>();
   socket.connect(uri, () => connectCompleter.complete(null),
       (error) => connectCompleter.complete('$error'));
-  final String connectError = await connectCompleter.future;
+  final String? connectError = await connectCompleter.future;
   if (connectError != null) throw FormatException(connectError);
 
   if (secureUpgrade != null &&
@@ -193,10 +194,10 @@ Future<SocketInterface> connectUri(Uri uri, SocketInterface socket,
 Future<HttpResponse> httpRequest(Uri uri, String method, SocketInterface socket,
     {Map<String, String> requestHeaders,
     Uint8List body,
-    StringCallback debugPrint,
+    StringCallback? debugPrint,
     bool persistentConnection = true}) async {
   /// Initialize connection state.
-  String headerText;
+  String? headerText;
   List<String> statusLine;
   Map<String, String> headers;
   int contentLength = 0, contentRead = 0;
@@ -208,7 +209,7 @@ Future<HttpResponse> httpRequest(Uri uri, String method, SocketInterface socket,
   if (!socket.connected && !socket.connecting) {
     socket = await connectUri(uri, socket);
   }
-  socket.handleDone((String reason) {
+  socket.handleDone((String? reason) {
     if (debugPrint != null) {
       debugPrint('SSHTunneledBaseClient.socket.handleDone');
     }
@@ -298,7 +299,7 @@ Future<HttpResponse> httpRequest(Uri uri, String method, SocketInterface socket,
       '\r\n\r\n');
   if (method == 'POST') socket.sendRaw(body);
 
-  final String readHeadersError = await readHeadersCompleter.future;
+  final String? readHeadersError = await readHeadersCompleter.future;
   if (readHeadersError != null) throw FormatException(readHeadersError);
 
   return HttpResponse(int.parse(statusLine[1]),

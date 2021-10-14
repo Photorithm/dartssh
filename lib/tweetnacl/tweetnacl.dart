@@ -9,13 +9,12 @@ import 'package:convert/convert.dart';
 import 'package:fixnum/fixnum.dart';
 
 class KeyPair {
-  Uint8List _publicKey;
-  Uint8List _secretKey;
+  final Uint8List _publicKey;
+  final Uint8List _secretKey;
 
-  KeyPair(publicKeyLength, secretKeyLength) {
-    _publicKey = Uint8List(publicKeyLength);
-    _secretKey = Uint8List(secretKeyLength);
-  }
+  KeyPair(publicKeyLength, secretKeyLength)
+      : _publicKey = Uint8List(publicKeyLength),
+        _secretKey = Uint8List(secretKeyLength);
 
   Uint8List get publicKey => _publicKey;
 
@@ -45,11 +44,9 @@ class Box {
 
   final Uint8List _theirPublicKey;
   final Uint8List _mySecretKey;
-  Uint8List _sharedKey;
+  Uint8List? _sharedKey;
 
-  Box(this._theirPublicKey, this._mySecretKey) {
-    _nonce = 68;
-  }
+  Box(this._theirPublicKey, this._mySecretKey) : _nonce = 68;
 
   Box.nonce(this._theirPublicKey, this._mySecretKey, this._nonce) {
     // generate pre-computed shared key
@@ -93,17 +90,17 @@ class Box {
    *   Returns an encrypted and authenticated message,
    *   which is nacl.box.overheadLength longer than the original message.
    * */
-  Uint8List box(Uint8List message) {
+  Uint8List? box(Uint8List? message) {
     if (message == null) return null;
     return box_len(message, 0, message.length);
   }
 
-  Uint8List box_off(Uint8List message, final int moff) {
+  Uint8List? box_off(Uint8List? message, final int moff) {
     if (!(message != null && message.length > moff)) return null;
     return box_len(message, moff, message.length - moff);
   }
 
-  Uint8List box_len(Uint8List message, final int moff, final int mlen) {
+  Uint8List? box_len(Uint8List? message, final int moff, final int mlen) {
     if (!(message != null && message.length >= (moff + mlen))) return null;
 
     // prepare shared key
@@ -122,19 +119,19 @@ class Box {
    *   Returns an encrypted and authenticated message,
    *   which is nacl.box.overheadLength longer than the original message.
    * */
-  Uint8List box_nonce(Uint8List message, Uint8List theNonce) {
+  Uint8List? box_nonce(Uint8List? message, Uint8List theNonce) {
     if (message == null) return null;
     return box_nonce_len(message, 0, message.length, theNonce);
   }
 
-  Uint8List box_nonce_off(
-      Uint8List message, final int moff, Uint8List theNonce) {
+  Uint8List? box_nonce_off(
+      Uint8List? message, final int moff, Uint8List theNonce) {
     if (!(message != null && message.length > moff)) return null;
     return box_nonce_len(message, moff, message.length - moff, theNonce);
   }
 
-  Uint8List box_nonce_len(
-      Uint8List message, final int moff, final int mlen, Uint8List theNonce) {
+  Uint8List? box_nonce_len(
+      Uint8List? message, final int moff, final int mlen, Uint8List? theNonce) {
     if (!(message != null &&
         message.length >= (moff + mlen) &&
         theNonce != null &&
@@ -152,7 +149,7 @@ class Box {
    *
    *   Returns the original message, or null if authentication fails.
    * */
-  Uint8List open(Uint8List box) {
+  Uint8List? open(Uint8List? box) {
     if (box == null) return null;
 
     // prepare shared key
@@ -161,7 +158,7 @@ class Box {
     return open_after(box, 0, box.length);
   }
 
-  Uint8List open_off(Uint8List box, final int boxoff) {
+  Uint8List? open_off(Uint8List? box, final int boxoff) {
     if (!(box != null && box.length > boxoff)) return null;
 
     // prepare shared key
@@ -170,7 +167,7 @@ class Box {
     return open_after(box, boxoff, box.length - boxoff);
   }
 
-  Uint8List open_len(Uint8List box, final int boxoff, final int boxlen) {
+  Uint8List? open_len(Uint8List? box, final int boxoff, final int boxlen) {
     if (!(box != null && box.length >= (boxoff + boxlen))) return null;
 
     // prepare shared key
@@ -185,7 +182,7 @@ class Box {
    *   Explicit passing of nonce
    *   Returns the original message, or null if authentication fails.
    * */
-  Uint8List open_nonce(Uint8List box, Uint8List theNonce) {
+  Uint8List? open_nonce(Uint8List? box, Uint8List? theNonce) {
     if (!(box != null && theNonce != null && theNonce.length == nonceLength)) {
       return null;
     }
@@ -196,8 +193,8 @@ class Box {
     return open_after_len(box, 0, box.length, theNonce);
   }
 
-  Uint8List open_nonce_off(
-      Uint8List box, final int boxoff, Uint8List theNonce) {
+  Uint8List? open_nonce_off(
+      Uint8List? box, final int boxoff, Uint8List? theNonce) {
     if (!(box != null &&
         box.length > boxoff &&
         theNonce != null &&
@@ -209,8 +206,8 @@ class Box {
     return open_after_len(box, boxoff, box.length - boxoff, theNonce);
   }
 
-  Uint8List open_nonce_len(
-      Uint8List box, final int boxoff, final int boxlen, Uint8List theNonce) {
+  Uint8List? open_nonce_len(
+      Uint8List? box, final int boxoff, final int boxlen, Uint8List? theNonce) {
     if (!(box != null &&
         box.length >= (boxoff + boxlen) &&
         theNonce != null &&
@@ -222,11 +219,11 @@ class Box {
     return open_after_len(box, boxoff, boxlen, theNonce);
   }
 
-  Uint8List before() {
+  Uint8List? before() {
     if (this._sharedKey == null) {
       this._sharedKey = Uint8List(sharedKeyLength);
       TweetNaclFast.crypto_box_beforenm(
-          this._sharedKey, this._theirPublicKey, this._mySecretKey);
+          this._sharedKey!, this._theirPublicKey, this._mySecretKey);
     }
 
     return this._sharedKey;
@@ -235,7 +232,7 @@ class Box {
   /*
    *   Same as nacl.box, but uses a shared key precomputed with nacl.box.before.
    * */
-  Uint8List after(Uint8List message, final int moff, final int mlen) {
+  Uint8List? after(Uint8List message, final int moff, final int mlen) {
     return after_len(message, moff, mlen, _generateNonce());
   }
 
@@ -243,8 +240,8 @@ class Box {
    *   Same as nacl.box, but uses a shared key precomputed with nacl.box.before,
    *   and passes a nonce explicitly.
    * */
-  Uint8List after_len(
-      Uint8List message, final int moff, final int mlen, Uint8List theNonce) {
+  Uint8List? after_len(
+      Uint8List? message, final int moff, final int mlen, Uint8List? theNonce) {
     // check message
     if (!(message != null &&
         message.length >= (moff + mlen) &&
@@ -282,12 +279,12 @@ class Box {
    *   Same as nacl.box.open,
    *   but uses a shared key pre-computed with nacl.box.before.
    * */
-  Uint8List open_after(Uint8List box, final int boxoff, final int boxlen) {
+  Uint8List? open_after(Uint8List box, final int boxoff, final int boxlen) {
     return open_after_len(box, boxoff, boxlen, _generateNonce());
   }
 
-  Uint8List open_after_len(
-      Uint8List box, final int boxoff, final int boxlen, Uint8List theNonce) {
+  Uint8List? open_after_len(
+      Uint8List? box, final int boxoff, final int boxlen, Uint8List theNonce) {
     // check message
     if (!(box != null &&
         box.length >= (boxoff + boxlen) &&
@@ -405,36 +402,36 @@ class SecretBox {
    *   Returns an encrypted and authenticated message,
    *   which is nacl.secretbox.overheadLength longer than the original message.
    * */
-  Uint8List box(Uint8List message) {
+  Uint8List? box(Uint8List? message) {
     if (message == null) return null;
     return box_len(message, 0, message.length);
   }
 
-  Uint8List box_off(Uint8List message, final int moff) {
+  Uint8List? box_off(Uint8List? message, final int moff) {
     if (!(message != null && message.length > moff)) return null;
     return box_len(message, moff, message.length - moff);
   }
 
-  Uint8List box_len(Uint8List message, final int moff, final int mlen) {
+  Uint8List? box_len(Uint8List? message, final int moff, final int mlen) {
     // check message
     if (!(message != null && message.length >= (moff + mlen))) return null;
     return box_nonce_len(
         message, moff, message.length - moff, _generateNonce());
   }
 
-  Uint8List box_nonce(Uint8List message, Uint8List theNonce) {
+  Uint8List? box_nonce(Uint8List? message, Uint8List theNonce) {
     if (message == null) return null;
     return box_nonce_len(message, 0, message.length, theNonce);
   }
 
-  Uint8List box_nonce_off(
-      Uint8List message, final int moff, Uint8List theNonce) {
+  Uint8List? box_nonce_off(
+      Uint8List? message, final int moff, Uint8List theNonce) {
     if (!(message != null && message.length > moff)) return null;
     return box_nonce_len(message, moff, message.length - moff, theNonce);
   }
 
-  Uint8List box_nonce_len(
-      Uint8List message, final int moff, final int mlen, Uint8List theNonce) {
+  Uint8List? box_nonce_len(
+      Uint8List? message, final int moff, final int mlen, Uint8List? theNonce) {
     // check message
     if (!(message != null &&
         message.length >= (moff + mlen) &&
@@ -474,17 +471,17 @@ class SecretBox {
          *
          *   Returns the original message, or null if authentication fails.
          * */
-  Uint8List open(Uint8List box) {
+  Uint8List? open(Uint8List? box) {
     if (box == null) return null;
     return open_len(box, 0, box.length);
   }
 
-  Uint8List open_off(Uint8List box, final int boxoff) {
+  Uint8List? open_off(Uint8List? box, final int boxoff) {
     if (!(box != null && box.length > boxoff)) return null;
     return open_len(box, boxoff, box.length - boxoff);
   }
 
-  Uint8List open_len(Uint8List box, final int boxoff, final int boxlen) {
+  Uint8List? open_len(Uint8List? box, final int boxoff, final int boxlen) {
     // check message
     if (!(box != null &&
         box.length >= (boxoff + boxlen) &&
@@ -492,19 +489,19 @@ class SecretBox {
     return open_nonce_len(box, boxoff, box.length - boxoff, _generateNonce());
   }
 
-  Uint8List open_nonce(Uint8List box, Uint8List theNonce) {
+  Uint8List? open_nonce(Uint8List? box, Uint8List theNonce) {
     if (box == null) return null;
     return open_nonce_len(box, 0, box.length, theNonce);
   }
 
-  Uint8List open_nonce_off(
-      Uint8List box, final int boxoff, Uint8List theNonce) {
+  Uint8List? open_nonce_off(
+      Uint8List? box, final int boxoff, Uint8List theNonce) {
     if (!(box != null && box.length > boxoff)) return null;
     return open_nonce_len(box, boxoff, box.length - boxoff, theNonce);
   }
 
-  Uint8List open_nonce_len(
-      Uint8List box, final int boxoff, final int boxlen, Uint8List theNonce) {
+  Uint8List? open_nonce_len(
+      Uint8List? box, final int boxoff, final int boxlen, Uint8List? theNonce) {
     // check message
     if (!(box != null &&
         box.length >= (boxoff + boxlen) &&
@@ -553,7 +550,7 @@ class ScalarMult {
    *   Multiplies an integer n by a group element p and
    *   returns the resulting group element.
    * */
-  static Uint8List scalseMult(Uint8List n, Uint8List p) {
+  static Uint8List? scalseMult(Uint8List n, Uint8List p) {
     if (!(n.length == scalarLength && p.length == groupElementLength)) {
       return null;
     }
@@ -569,7 +566,7 @@ class ScalarMult {
    *   Multiplies an integer n by a standard group element and
    *   returns the resulting group element.
    * */
-  static Uint8List scalseMult_base(Uint8List n) {
+  static Uint8List? scalseMult_base(Uint8List n) {
     if (!(n.length == scalarLength)) return null;
 
     final Uint8List q = Uint8List(scalarLength);
@@ -590,7 +587,7 @@ class Hash {
   /*
    *   Returns SHA-512 hash of the message.
    * */
-  static Uint8List sha512(Uint8List message) {
+  static Uint8List? sha512(Uint8List? message) {
     if (!(message != null && message.isNotEmpty)) return null;
 
     final Uint8List out = Uint8List(hashLength);
@@ -600,7 +597,7 @@ class Hash {
     return out;
   }
 
-  static Uint8List sha512_string(String message) {
+  static Uint8List? sha512_string(String message) {
     return sha512(Uint8List.fromList(utf8.encode(message)));
   }
 }
@@ -629,19 +626,19 @@ class Signature {
   /*
    *   Signs the message using the secret key and returns a signed message.
    * */
-  Uint8List sign(Uint8List message) {
+  Uint8List? sign(Uint8List? message) {
     if (message == null) return null;
 
     return sign_len(message, 0, message.length);
   }
 
-  Uint8List sign_off(Uint8List message, final int moff) {
+  Uint8List? sign_off(Uint8List? message, final int moff) {
     if (!(message != null && message.length > moff)) return null;
 
     return sign_len(message, moff, message.length - moff);
   }
 
-  Uint8List sign_len(Uint8List message, final int moff, final int mlen) {
+  Uint8List? sign_len(Uint8List? message, final int moff, final int mlen) {
     // check message
     if (!(message != null && message.length >= (moff + mlen))) return null;
 
@@ -657,20 +654,20 @@ class Signature {
    *   Verifies the signed message and returns the message without signature.
    *   Returns null if verification failed.
    * */
-  Uint8List open(Uint8List signedMessage) {
+  Uint8List? open(Uint8List? signedMessage) {
     if (signedMessage == null) return null;
 
     return open_len(signedMessage, 0, signedMessage.length);
   }
 
-  Uint8List open_off(Uint8List signedMessage, final int smoff) {
+  Uint8List? open_off(Uint8List? signedMessage, final int smoff) {
     if (!(signedMessage != null && signedMessage.length > smoff)) return null;
 
     return open_len(signedMessage, smoff, signedMessage.length - smoff);
   }
 
-  Uint8List open_len(
-      Uint8List signedMessage, final int smoff, final int smlen) {
+  Uint8List? open_len(
+      Uint8List? signedMessage, final int smoff, final int smlen) {
     // check sm length
     if (!(signedMessage != null &&
         signedMessage.length >= (smoff + smlen) &&
@@ -696,10 +693,10 @@ class Signature {
    *   Signs the message using the secret key and returns a signature.
    * */
   Uint8List detached(Uint8List message) {
-    final Uint8List signedMsg = this.sign(message);
+    final Uint8List? signedMsg = this.sign(message);
     final Uint8List sig = Uint8List(signatureLength);
     for (int i = 0; i < sig.length; i++) {
-      sig[i] = signedMsg[i];
+      sig[i] = signedMsg![i];
     }
     return sig;
   }
@@ -1590,7 +1587,7 @@ class TweetNaclFast {
     return _crypto_stream_salsa20_xor(c, cpos, m, mpos, d, sn, s);
   }
 
-  static int _crypto_onetimeauth(Uint8List out, final int outpos, Uint8List m,
+  static int _crypto_onetimeauth(Uint8List out, final int outpos, Uint8List? m,
       final int mpos, int n, Uint8List k) {
     final poly1305 s = poly1305(k);
     s.update(m, mpos, n);
@@ -1603,18 +1600,18 @@ class TweetNaclFast {
   }
 
   static int _crypto_onetimeauth_verify(Uint8List h, final int hoff,
-      Uint8List m, final int moff, int /*long*/ n, Uint8List k) {
+      Uint8List? m, final int moff, int /*long*/ n, Uint8List k) {
     final Uint8List x = Uint8List(16);
     _crypto_onetimeauth(x, 0, m, moff, n, k);
     return _crypto_verify_16(h, hoff, x, 0);
   }
 
   int crypto_onetimeauth_verify_len(
-      Uint8List h, Uint8List m, int n, Uint8List k) {
+      Uint8List h, Uint8List? m, int n, Uint8List k) {
     return _crypto_onetimeauth_verify(h, 0, m, 0, n, k);
   }
 
-  int crypto_onetimeauth_verify(Uint8List h, Uint8List m, Uint8List k) {
+  int crypto_onetimeauth_verify(Uint8List h, Uint8List? m, Uint8List k) {
     return crypto_onetimeauth_verify_len(h, m, m != null ? m.length : 0, k);
   }
 
@@ -2477,7 +2474,8 @@ class TweetNaclFast {
     ///Log.d(TAG, "crypto_hashblocks_hl m/"+n + "-> "+dbgt);
     int i, j;
 
-    final List<Int32> wh = List<Int32>(16), wl = List<Int32>(16);
+    final List<Int32> wh = List<Int32>.filled(16, Int32(0)),
+        wl = List<Int32>.filled(16, Int32(0));
     Int32 bh0,
         bh1,
         bh2,
@@ -2946,7 +2944,8 @@ class TweetNaclFast {
   ///int crypto_hash(Uint8List out, Uint8List m, long n)
   static int crypto_hash_off(
       Uint8List out, Uint8List m, final int moff, int n) {
-    final List<Int32> hh = List<Int32>(8), hl = List<Int32>(8);
+    final List<Int32> hh = List<Int32>.filled(8, Int32(0)),
+        hl = List<Int32>.filled(8, Int32(0));
     final Uint8List x = Uint8List(256);
     final b = n;
 
@@ -2998,7 +2997,7 @@ class TweetNaclFast {
     return 0;
   }
 
-  static int crypto_hash(Uint8List out, Uint8List m) {
+  static int crypto_hash(Uint8List out, Uint8List? m) {
     return crypto_hash_off(out, m, 0, m != null ? m.length : 0);
   }
 
@@ -3796,10 +3795,12 @@ class poly1305 {
     this._h[7] =
         ((this._h[8].shiftRightUnsigned(8)) | (this._h[9] << 5)) & 0xffff;
 
-    f = this._h[0] + this._pad[0];
+    f = this._h[0] + this._pad[0] as Int32;
     this._h[0] = f & 0xffff;
     for (i = 1; i < 8; i++) {
-      f = (((this._h[i] + this._pad[i]) | 0) + (f.shiftRightUnsigned(16))) | 0;
+      f = ((((this._h[i] + this._pad[i] as Int32) | 0) +
+              (f.shiftRightUnsigned(16))) |
+          0) as Int32;
       this._h[i] = f & 0xffff;
     }
 
@@ -3823,14 +3824,14 @@ class poly1305 {
     return this;
   }
 
-  poly1305 update(Uint8List m, int mpos, int bytes) {
+  poly1305 update(Uint8List? m, int mpos, int bytes) {
     int i, want;
 
     if (this._leftover != 0) {
       want = (16 - this._leftover);
       if (want > bytes) want = bytes;
       for (i = 0; i < want; i++) {
-        this._buffer[this._leftover + i] = m[mpos + i];
+        this._buffer[this._leftover + i] = m![mpos + i];
       }
       bytes -= want;
       mpos += want;
@@ -3842,14 +3843,14 @@ class poly1305 {
 
     if (bytes >= 16) {
       want = bytes - (bytes % 16);
-      this.blocks(m, mpos, want);
+      this.blocks(m!, mpos, want);
       mpos += want;
       bytes -= want;
     }
 
     if (bytes != 0) {
       for (i = 0; i < bytes; i++) {
-        this._buffer[this._leftover + i] = m[mpos + i];
+        this._buffer[this._leftover + i] = m![mpos + i];
       }
       this._leftover += bytes;
     }
