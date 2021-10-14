@@ -43,8 +43,8 @@ mixin SSHAgentForwarding on SSHTransport {
         break;
 
       default:
-        if (print != null) {
-          print('$hostport: unknown agent packet number: $agentPacketId');
+        if (this.print != null) {
+          this.print!('$hostport: unknown agent packet number: $agentPacketId');
         }
         break;
     }
@@ -53,11 +53,11 @@ mixin SSHAgentForwarding on SSHTransport {
   /// Responds with any identities we're forwarding.
   void handleAGENTC_REQUEST_IDENTITIES(Channel channel) {
     if (tracePrint != null) {
-      tracePrint('$hostport: agent channel: AGENTC_REQUEST_IDENTITIES');
+      tracePrint!('$hostport: agent channel: AGENTC_REQUEST_IDENTITIES');
     }
     final AGENT_IDENTITIES_ANSWER reply = AGENT_IDENTITIES_ANSWER();
     if (identity != null) {
-      reply.keys = identity.getRawPublicKeyList();
+      reply.keys = identity!.getRawPublicKeyList();
     }
     sendToChannel(channel, reply.toRaw());
   }
@@ -65,12 +65,12 @@ mixin SSHAgentForwarding on SSHTransport {
   /// Signs challenge authenticating a descendent channel.
   void handleAGENTC_SIGN_REQUEST(Channel channel, AGENTC_SIGN_REQUEST msg) {
     if (tracePrint != null) {
-      tracePrint('$hostport: agent channel: AGENTC_SIGN_REQUEST');
+      tracePrint!('$hostport: agent channel: AGENTC_SIGN_REQUEST');
     }
     final SerializableInput keyStream = SerializableInput(msg.key);
     final String keyType = deserializeString(keyStream);
-    final Uint8List sig =
-        identity.signMessage(Key.id(keyType), msg.data, getSecureRandom());
+    final Uint8List? sig =
+        identity!.signMessage(Key.id(keyType), msg.data, getSecureRandom());
     if (sig != null) {
       sendToChannel(channel, AGENT_SIGN_RESPONSE(sig).toRaw());
     } else {

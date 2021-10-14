@@ -5,15 +5,14 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
-import "package:pointycastle/api.dart";
-
 import 'package:dartssh/identity.dart';
 import 'package:dartssh/kex.dart';
-import 'package:dartssh/socket.dart';
-import 'package:dartssh/ssh.dart';
 import 'package:dartssh/protocol.dart';
 import 'package:dartssh/serializable.dart';
+import 'package:dartssh/socket.dart';
+import 'package:dartssh/ssh.dart';
 import 'package:dartssh/transport.dart';
+import "package:pointycastle/api.dart";
 
 typedef ChannelRequest = bool Function(SSHServer server, String request);
 typedef UserAuthRequest = bool Function(MSG_USERAUTH_REQUEST msg);
@@ -23,7 +22,7 @@ class SSHServer extends SSHTransport {
   // Parameters
   RemoteForwardCallback directTcpRequest;
   UserAuthRequest userAuthRequest;
-  ChannelRequest sessionChannelRequest;
+  ChannelRequest? sessionChannelRequest;
   GexRequest gexRequest;
 
   SSHServer(Identity hostkey,
@@ -129,8 +128,9 @@ class SSHServer extends SSHTransport {
         break;
 
       default:
-        if (print != null) {
-          print('$hostport: unknown packet number: $packetId, len $packetLen');
+        if (this.print != null) {
+          this.print!(
+              '$hostport: unknown packet number: $packetId, len $packetLen');
         }
         break;
     }
@@ -236,10 +236,10 @@ class SSHServer extends SSHTransport {
     } else if (msg.channelType == 'direct-tcpip' && directTcpRequest != null) {
       MSG_CHANNEL_OPEN_TCPIP tcpip = MSG_CHANNEL_OPEN_TCPIP()
         ..deserialize(packetS);
-      Channel tcpipChannel = acceptChannel(msg);
+      final Channel tcpipChannel = acceptChannel(msg);
       directTcpRequest(tcpipChannel, tcpip.srcHost, tcpip.srcPort,
               tcpip.dstHost, tcpip.dstPort)
-          .then((String error) {
+          .then((String? error) {
         if (error == null) {
           writeCipher(MSG_CHANNEL_OPEN_CONFIRMATION(tcpipChannel.remoteId,
               tcpipChannel.localId, tcpipChannel.windowS, maxPacketSize));
@@ -248,8 +248,8 @@ class SSHServer extends SSHTransport {
         }
       });
     } else {
-      if (print != null) {
-        print('unknown channel open ${msg.channelType}');
+      if (this.print != null) {
+        this.print!('unknown channel open ${msg.channelType}');
       }
       writeCipher(MSG_CHANNEL_OPEN_FAILURE(msg.senderChannel, 0, '', ''));
     }
@@ -257,15 +257,15 @@ class SSHServer extends SSHTransport {
 
   void handleMSG_CHANNEL_REQUEST(MSG_CHANNEL_REQUEST msg) {
     if (tracePrint != null) {
-      tracePrint(
+      tracePrint!(
           '$hostport: MSG_CHANNEL_REQUEST ${msg.requestType} wantReply=${msg.wantReply}');
     }
-    Channel chan = channels[msg.recipientChannel];
+    final Channel? chan = channels[msg.recipientChannel];
     if (chan == sessionChannel &&
         sessionChannelRequest != null &&
-        sessionChannelRequest(this, msg.requestType)) {
+        sessionChannelRequest!(this, msg.requestType)) {
       if (msg.wantReply) {
-        writeCipher(MSG_CHANNEL_SUCCESS(chan.remoteId));
+        writeCipher(MSG_CHANNEL_SUCCESS(chan!.remoteId));
       }
     } else {
       if (msg.wantReply) {
@@ -276,42 +276,40 @@ class SSHServer extends SSHTransport {
 
   @override
   void handleChannelOpenConfirmation(Channel channel) {
-    if (channel.connected != null) {
-      channel.connected();
-    }
+    channel.connected?.call();
   }
 
   @override
   void handleChannelData(Channel channel, Uint8List data) {
     if (channel == sessionChannel) {
       response(this, utf8.decode(data));
-    } else if (channel.cb != null) {
-      channel.cb(channel, data);
+    } else {
+      channel.cb?.call(channel, data);
     }
   }
 
   @override
-  void handleChannelClose(Channel channel, [String description]) {
+  void handleChannelClose(Channel channel, [String? description]) {
     if (channel == sessionChannel) {
       sessionChannel = null;
     } else if (channel.cb != null) {
       channel.opened = false;
-      channel.cb(channel, Uint8List(0));
+      channel.cb!(channel, Uint8List(0));
     }
   }
 
   @override
   void sendChannelData(Uint8List b) {
     if (sessionChannel != null) {
-      sendToChannel(sessionChannel, b);
+      sendToChannel(sessionChannel!, b);
     }
   }
 
-  Channel openAgentChannel(ChannelCallback cb,
-      {VoidCallback connected, StringCallback error}) {
-    if (debugPrint != null) debugPrint('openAgentChannel');
+  Channel? openAgentChannel(ChannelCallback cb,
+      {VoidCallback? connected, StringCallback? error}) {
+    if (debugPrint != null) debugPrint!('openAgentChannel');
     if (socket == null || state <= SSHTransportState.FIRST_NEWKEYS) return null;
-    Channel chan = channels[nextChannelId] = Channel(
+    final Channel chan = channels[nextChannelId] = Channel(
         localId: nextChannelId++,
         windowS: initialWindowSize,
         cb: cb,

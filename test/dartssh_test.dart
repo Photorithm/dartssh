@@ -197,8 +197,7 @@ void main() {
       password,
       '--debug',
       '--trace',
-    ], sshInput.stream, (_, String v) => sshResponse += v,
-        () => sshInput.close());
+    ], sshInput.stream, (_, String v) => sshResponse += v, sshInput.close);
 
     while (ssh.client.sessionChannel == null) {
       await Future.delayed(const Duration(seconds: 1));
@@ -243,8 +242,7 @@ void main() {
       '127.0.0.1:42022',
       '--debug',
       '--trace',
-    ], sshInput.stream, (_, String v) => sshResponse += v,
-        () => sshInput.close());
+    ], sshInput.stream, (_, String v) => sshResponse += v, sshInput.close);
 
     while (ssh.client.sessionChannel == null) {
       await Future.delayed(const Duration(seconds: 1));

@@ -12,11 +12,11 @@ import 'package:dartssh/transport.dart';
 class WebSocketImpl extends SocketInterface {
   static const String type = 'html';
 
-  html.WebSocket socket;
-  Uint8ListCallback messageHandler;
-  StringCallback errorHandler, doneHandler;
+  html.WebSocket? socket;
+  Uint8ListCallback? messageHandler;
+  StringCallback? errorHandler, doneHandler;
   VoidCallback connectCallback;
-  StreamSubscription connectErrorSubscription,
+  StreamSubscription? connectErrorSubscription,
       messageSubscription,
       errorSubscription,
       doneSubscription;
@@ -33,20 +33,20 @@ class WebSocketImpl extends SocketInterface {
     errorHandler = null;
     doneHandler = null;
     if (errorSubscription != null) {
-      errorSubscription.cancel();
+      errorSubscription!.cancel();
       errorSubscription = null;
     }
     if (doneSubscription != null) {
-      doneSubscription.cancel();
+      doneSubscription!.cancel();
       doneSubscription = null;
     }
     if (messageSubscription != null) {
-      messageSubscription.cancel();
+      messageSubscription!.cancel();
       messageSubscription = null;
     }
     if (socket != null) {
-      socket.close();
-      socket == null;
+      socket!.close();
+      socket = null;
     }
   }
 
@@ -70,7 +70,7 @@ class WebSocketImpl extends SocketInterface {
   }
 
   void connectSucceeded(dynamic x) {
-    connectErrorSubscription.cancel();
+    connectErrorSubscription?.cancel();
     connectErrorSubscription = null;
     connectCallback();
   }

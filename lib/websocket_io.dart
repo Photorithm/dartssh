@@ -18,10 +18,10 @@ import 'package:dartssh/transport.dart';
 class WebSocketImpl extends SocketInterface {
   static const String type = 'io';
 
-  io.WebSocket socket;
-  StreamSubscription messageSubscription;
-  Uint8ListCallback messageHandler;
-  StringCallback errorHandler, doneHandler;
+  io.WebSocket? socket;
+  StreamSubscription? messageSubscription;
+  Uint8ListCallback? messageHandler;
+  StringCallback? errorHandler, doneHandler;
 
   @override
   bool get connected => socket != null;
@@ -35,10 +35,8 @@ class WebSocketImpl extends SocketInterface {
     messageHandler = null;
     errorHandler = null;
     doneHandler = null;
-    if (socket != null) {
-      socket.close();
-      socket = null;
-    }
+    socket?.close();
+    socket = null;
   }
 
   @override
@@ -78,7 +76,7 @@ class WebSocketImpl extends SocketInterface {
           serverSide: false);
       connectSucceeded(onConnected);
     } catch (error) {
-      onError(error);
+      onError(error.toString());
     }
   }
 
@@ -100,34 +98,31 @@ class WebSocketImpl extends SocketInterface {
     messageHandler = newMessageHandler;
 
     if (messageSubscription == null) {
-      messageSubscription = socket.listen((m) {
+      messageSubscription = socket!.listen((m) {
         //print("WebSocketImpl.read: $m");
         if (messageHandler != null) {
-          messageHandler(utf8.encode(m));
+          messageHandler?.call(utf8.encode(m));
         }
       });
 
-      socket.done.then((_) {
-        if (doneHandler != null) {
-          doneHandler(
-              'WebSocketImpl.handleDone: ${socket.closeCode} ${socket.closeReason}');
-        }
+      socket!.done.then((_) {
+        doneHandler?.call(
+            'WebSocketImpl.handleDone: ${socket.closeCode} ${socket.closeReason}');
+
         return null;
       });
 
-      socket.handleError((error, _) {
-        if (errorHandler != null) {
-          errorHandler(error);
-        }
+      socket!.handleError((error, _) {
+        errorHandler?.call(error);
       });
     }
   }
 
   @override
-  void send(String text) => socket.addUtf8Text(utf8.encode(text));
+  void send(String text) => socket!.addUtf8Text(utf8.encode(text));
 
   @override
-  void sendRaw(Uint8List raw) => socket.add(raw);
+  void sendRaw(Uint8List raw) => socket!.add(raw);
 }
 
 /// The initial [SSHTunneledSocketImpl] (which implements same [SocketInteface]

@@ -26,14 +26,14 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   String login, termvar, startupCommand;
   bool agentForwarding, closeOnDisconnect, startShell;
   FingerprintCallback acceptHostFingerprint;
-  Uint8ListFunction getPassword;
+  Uint8ListFunction? getPassword;
   IdentityFunction loadIdentity;
   List<VoidCallback> success = <VoidCallback>[];
 
   // State
   int loginPrompts = 0, passwordPrompts = 0, userauthFail = 0;
   bool acceptedHostkey = false, loadedPw = false, wrotePw = false;
-  Uint8List pw;
+  Uint8List? pw;
   int termWidth, termHeight;
 
   SSHClient(
@@ -52,9 +52,9 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
       VoidCallback disconnected,
       ResponseCallback response,
       StringCallback print,
-      StringCallback debugPrint,
+      StringCallback? debugPrint,
       StringCallback tracePrint,
-      VoidCallback success,
+      VoidCallback? success,
       this.acceptHostFingerprint,
       this.loadIdentity,
       this.getPassword,
@@ -173,13 +173,13 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
 
       case MSG_CHANNEL_SUCCESS.ID:
         if (tracePrint != null) {
-          tracePrint('$hostport: MSG_CHANNEL_SUCCESS');
+          tracePrint!('$hostport: MSG_CHANNEL_SUCCESS');
         }
         break;
 
       case MSG_CHANNEL_FAILURE.ID:
         if (tracePrint != null) {
-          tracePrint('$hostport: MSG_CHANNEL_FAILURE');
+          tracePrint!('$hostport: MSG_CHANNEL_FAILURE');
         }
         break;
 
@@ -196,8 +196,9 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
         break;
 
       default:
-        if (print != null) {
-          print('$hostport: unknown packet number: $packetId, len $packetLen');
+        if (this.print != null) {
+          this.print!(
+              '$hostport: unknown packet number: $packetId, len $packetLen');
         }
         break;
     }
@@ -229,8 +230,8 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
     }
     if (guessedS && !guessedRightS) {
       guessedS = false;
-      if (print != null) {
-        print('$hostport: server guessed wrong, ignoring packet');
+      if (this.print != null) {
+        this.print!('$hostport: server guessed wrong, ignoring packet');
       }
       return;
     }
@@ -430,11 +431,11 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
     } else if (msg.channelType == 'forwarded-tcpip') {
       final MSG_CHANNEL_OPEN_TCPIP openTcpIp = MSG_CHANNEL_OPEN_TCPIP()
         ..deserialize(packetS);
-      final Forward forward =
+      final Forward? forward =
           forwardingRemote == null ? null : forwardingRemote[openTcpIp.dstPort];
       if (forward == null || remoteForward == null) {
-        if (print != null) {
-          print('unknown port open ${openTcpIp.dstPort}');
+        if (this.print != null) {
+          this.print!('unknown port open ${openTcpIp.dstPort}');
         }
         writeCipher(MSG_CHANNEL_OPEN_FAILURE(msg.senderChannel, 0, '', ''));
       } else {
@@ -445,8 +446,8 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
             channel.remoteId, channel.localId, channel.windowS, maxPacketSize));
       }
     } else {
-      if (print != null) {
-        print('unknown channel open ${msg.channelType}');
+      if (this.print != null) {
+        this.print!('unknown channel open ${msg.channelType}');
       }
       writeCipher(MSG_CHANNEL_OPEN_FAILURE(msg.senderChannel, 0, '', ''));
     }
@@ -516,9 +517,9 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
     } else if (chan.cb != null) {
       chan.opened = false;
       if (chan.error != null) {
-        chan.error(description);
+        chan.error!(description);
       } else {
-        chan.cb(chan, Uint8List(0));
+        chan.cb!(chan, Uint8List(0));
       }
     }
   }
@@ -655,17 +656,17 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
 class SSHTunneledSocketImpl extends SocketInterface {
   bool clientOwner, shutdownSend = false, shutdownRecv = false;
   SSHClient client;
-  Identity identity;
-  Channel channel;
+  Identity? identity;
+  Channel? channel;
   String sourceHost, tunnelToHost;
   int sourcePort, tunnelToPort;
-  VoidCallback connectHandler;
-  StringCallback connectError, onError, onDone;
+  VoidCallback? connectHandler;
+  StringCallback? connectError, onError, onDone;
   Uint8ListCallback onMessage;
 
   SSHTunneledSocketImpl.fromClient(this.client) : clientOwner = false;
 
-  SSHTunneledSocketImpl(Uri url, String login, String key, String password,
+  SSHTunneledSocketImpl(Uri url, String login, String? key, String? password,
       {StringCallback print, StringCallback debugPrint})
       : clientOwner = true {
     identity = key == null ? null : parsePem(key);
@@ -759,7 +760,7 @@ class SSHTunneledSocketImpl extends SocketInterface {
       connectError = null;
     }, error: (String description) {
       if (connectError != null) {
-        connectError(description);
+        connectError!(description);
       } else {
         onError(description);
       }

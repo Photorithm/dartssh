@@ -11,10 +11,10 @@ import 'package:dartssh/transport.dart';
 
 /// dart:io [Socket] based implementation of [SocketInterface].
 class SocketImpl extends SocketInterface {
-  Socket socket;
-  StreamSubscription messageSubscription;
-  Uint8ListCallback messageHandler;
-  StringCallback onError, onDone;
+  Socket? socket;
+  StreamSubscription? messageSubscription;
+  Uint8ListCallback? messageHandler;
+  StringCallback? onError, onDone;
 
   @override
   bool get connected => socket != null;
@@ -30,11 +30,11 @@ class SocketImpl extends SocketInterface {
     messageHandler = null;
     onError = onDone = null;
     if (messageSubscription != null) {
-      messageSubscription.cancel();
+      messageSubscription!.cancel();
       messageSubscription = null;
     }
     if (socket != null) {
-      socket.close();
+      socket!.close();
       socket = null;
     }
   }
@@ -55,7 +55,7 @@ class SocketImpl extends SocketInterface {
     } else {
       Socket.connect(uri.host, uri.port,
               timeout: Duration(seconds: timeoutSeconds))
-          .then((Socket x) {
+          .then((Socket? x) {
         if (x == null) {
           onError(null);
         } else {
@@ -236,8 +236,8 @@ class SocketAdaptor extends Stream<Uint8List> implements Socket {
 /// Copied from https://github.com/dart-lang/sdk/blob/master/sdk/lib/_internal/vm/bin/socket_patch.dart
 class SocketAdaptorStreamConsumer extends StreamConsumer<List<int>> {
   final SocketAdaptor socket;
-  StreamSubscription subscription;
-  Completer streamCompleter;
+  StreamSubscription? subscription;
+  Completer? streamCompleter;
   SocketAdaptorStreamConsumer(this.socket);
 
   @override
@@ -255,9 +255,9 @@ class SocketAdaptorStreamConsumer extends StreamConsumer<List<int>> {
   void done([dynamic error, StackTrace stackTrace]) {
     if (streamCompleter != null) {
       if (error != null) {
-        streamCompleter.completeError(error, stackTrace);
+        streamCompleter!.completeError(error, stackTrace);
       } else {
-        streamCompleter.complete(socket);
+        streamCompleter!.complete(socket);
       }
       streamCompleter = null;
     }

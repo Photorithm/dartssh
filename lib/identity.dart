@@ -66,7 +66,8 @@ class Identity {
     }
   }
 
-  Uint8List signMessage(int keyType, Uint8List m, [SecureRandom secureRandom]) {
+  Uint8List? signMessage(int keyType, Uint8List m,
+      [SecureRandom secureRandom]) {
     if (Key.ellipticCurveDSA(keyType)) {
       return signWithECDSAKey(m, secureRandom).toRaw();
     }

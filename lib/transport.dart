@@ -1,31 +1,30 @@
 // Copyright 2019 dartssh developers
 // Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 
-import 'dart:math';
 import 'dart:collection';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:convert/convert.dart';
-import "package:pointycastle/api.dart";
-import 'package:pointycastle/macs/hmac.dart';
-import 'package:pointycastle/random/fortuna_random.dart';
-import 'package:validators/sanitizers.dart';
-
 import 'package:dartssh/identity.dart';
 import 'package:dartssh/kex.dart';
 import 'package:dartssh/protocol.dart';
 import 'package:dartssh/serializable.dart';
 import 'package:dartssh/socket.dart';
 import 'package:dartssh/ssh.dart';
+import "package:pointycastle/api.dart";
+import 'package:pointycastle/macs/hmac.dart';
+import 'package:pointycastle/random/fortuna_random.dart';
+import 'package:validators/sanitizers.dart';
 
 typedef VoidCallback = void Function();
 typedef FutureFunction = Future Function();
-typedef StringCallback = void Function(String);
+typedef StringCallback = void Function(String?);
 typedef StringFunction = String Function();
 typedef StringFilter = String Function(String);
 typedef Uint8ListCallback = void Function(Uint8List);
 typedef Uint8ListFunction = Uint8List Function();
-typedef IdentityFunction = Identity Function();
+typedef IdentityFunction = Identity? Function();
 typedef FingerprintCallback = bool Function(int, Uint8List);
 typedef ChannelCallback = void Function(Channel, Uint8List);
 typedef ChannelInputCallback = void Function(Channel, SerializableInput);
@@ -48,9 +47,9 @@ class Channel {
   int localId, remoteId, windowC, windowS;
   bool opened = true, agentChannel = false, sentEof = false, sentClose = false;
   QueueBuffer buf = QueueBuffer(Uint8List(0));
-  ChannelCallback cb;
-  StringCallback error;
-  VoidCallback connected, closed;
+  ChannelCallback? cb;
+  StringCallback? error;
+  VoidCallback? connected, closed;
   Channel(
       {this.localId = 0,
       this.remoteId = 0,
@@ -78,7 +77,7 @@ class SSHTransportState {
 /// https://tools.ietf.org/html/rfc4253
 abstract class SSHTransport with SSHDiffieHellman {
   /// Parameter for public key authentication
-  Identity identity;
+  Identity? identity;
 
   /// Remote endpoint of SSH connection.  Parameter on client-side.
   Uri hostport;
@@ -87,10 +86,10 @@ abstract class SSHTransport with SSHDiffieHellman {
   bool compress;
 
   /// Source of randomness, e.g [Random.secure()].
-  Random random;
+  Random? random;
 
   /// Pointycastle's random interface.
-  SecureRandom secureRandom;
+  SecureRandom? secureRandom;
 
   /// Parameter invoked on connection close.
   VoidCallback disconnected;
@@ -99,13 +98,13 @@ abstract class SSHTransport with SSHDiffieHellman {
   ResponseCallback response;
 
   /// Parameter invoked with ERROR and INFO loggging.
-  StringCallback print;
+  StringCallback? print;
 
   /// Parameter invoked with debug logging.
-  StringCallback debugPrint;
+  StringCallback? debugPrint;
 
   /// Parameter invoked with trace logging.
-  StringCallback tracePrint;
+  StringCallback? tracePrint;
 
   /// Parameter describing local ports to forward over SSH tunnel.
   List<Forward> forwardLocal;
@@ -114,7 +113,7 @@ abstract class SSHTransport with SSHDiffieHellman {
   List<Forward> forwardRemote;
 
   /// Paramter invoked upon connection to forwarded remote port.
-  RemoteForwardCallback remoteForward;
+  RemoteForwardCallback? remoteForward;
 
   // State
   bool server,
@@ -160,15 +159,15 @@ abstract class SSHTransport with SSHDiffieHellman {
       integrityC2s,
       integrityS2c;
 
-  SocketInterface socket;
+  SocketInterface? socket;
   QueueBuffer readBuffer = QueueBuffer(Uint8List(0));
   SerializableInput packetS;
   BlockCipher encrypt, decrypt;
   HMac macAlgoC2s, macAlgoS2c;
   dynamic zreader, zwriter;
-  Channel sessionChannel;
+  Channel? sessionChannel;
   HashMap<int, Channel> channels = HashMap<int, Channel>();
-  HashMap<int, Forward> forwardingRemote;
+  HashMap<int, Forward>? forwardingRemote;
 
   SSHTransport(this.server,
       {this.identity,
@@ -208,7 +207,7 @@ abstract class SSHTransport with SSHDiffieHellman {
   /// If anything goes wrong, disconnect with [reason].
   void disconnect(String reason) {
     if (socket != null) {
-      socket.close();
+      socket!.close();
       socket = null;
     }
 
