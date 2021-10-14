@@ -108,7 +108,7 @@ class SocketAdaptor extends Stream<Uint8List> implements Socket {
   StreamController<Uint8List> controller;
   SocketAdaptorStreamConsumer consumer;
   IOSink sink;
-  StringCallback debugPrint;
+  StringCallback? debugPrint;
   // var _detachReady;
 
   @override
@@ -156,20 +156,20 @@ class SocketAdaptor extends Stream<Uint8List> implements Socket {
   void add(List<int> bytes) => sink.add(bytes);
 
   @override
-  void write(Object obj) => sink.write(obj);
+  void write(Object? obj) => sink.write(obj);
 
   @override
   void writeAll(Iterable objects, [String separator = '']) =>
       sink.writeAll(objects, separator);
 
   @override
-  void writeln([Object obj = '']) => sink.writeln(obj);
+  void writeln([Object? obj = '']) => sink.writeln(obj);
 
   @override
   void writeCharCode(int charCode) => sink.writeCharCode(charCode);
 
   @override
-  void addError(dynamic error, [StackTrace stackTrace]) {
+  void addError(dynamic error, [StackTrace? stackTrace]) {
     throw UnsupportedError('Cannot send errors on sockets');
   }
 
@@ -196,7 +196,7 @@ class SocketAdaptor extends Stream<Uint8List> implements Socket {
 
   @override
   StreamSubscription<Uint8List> listen(void Function(Uint8List event) onData,
-      {Function onError, void Function() onDone, bool cancelOnError}) {
+      {Function? onError, void Function()? onDone, bool? cancelOnError}) {
     //debugPrint('DEBUG SocketAdaptor.listen $remoteAddress:$remotePort');
     return controller.stream.listen((m) {
       //debugPrint('DEBUG SocketAdaptor.read $m');
@@ -248,11 +248,11 @@ class SocketAdaptorStreamConsumer extends StreamConsumer<List<int>> {
 
   void stop() {
     if (subscription == null) return;
-    subscription.cancel();
+    subscription!.cancel();
     subscription = null;
   }
 
-  void done([dynamic error, StackTrace stackTrace]) {
+  void done([dynamic error, StackTrace? stackTrace]) {
     if (streamCompleter != null) {
       if (error != null) {
         streamCompleter!.completeError(error, stackTrace);
@@ -271,7 +271,7 @@ class SocketAdaptorStreamConsumer extends StreamConsumer<List<int>> {
         try {
           if (subscription != null) {
             assert(data != null);
-            socket.impl.sendRaw(data);
+            socket.impl!.sendRaw(Uint8List.fromList(data!));
           }
         } catch (e) {
           socket.destroy();
@@ -428,7 +428,7 @@ class RawSocketAdaptor extends Stream<RawSocketEvent> implements RawSocket {
 }
 */
 
-InternetAddress tryParseInternetAddress(String x) {
+InternetAddress? tryParseInternetAddress(String x) {
   try {
     return InternetAddress(x);
   } catch (error) {

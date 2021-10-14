@@ -129,12 +129,13 @@ class WebSocketImpl extends SocketInterface {
 /// as [SSHTunneledWebSocketImpl]), is bridged via [SSHTunneledSocket] adaptor
 /// to initialize [io.WebSocket.fromUpgradedSocket()].
 class SSHTunneledWebSocketImpl extends WebSocketImpl {
-  SocketInterface tunneledSocket;
+  SocketInterface? tunneledSocket;
   final String sourceHost, tunnelToHost;
   final int sourcePort, tunnelToPort;
-  final StringCallback debugPrint;
+  final StringCallback? debugPrint;
 
   SSHTunneledWebSocketImpl(SSHTunneledSocketImpl inputSocket)
+      // ignore: prefer_initializing_formals
       : tunneledSocket = inputSocket,
         sourceHost = inputSocket.sourceHost,
         tunnelToHost = inputSocket.tunnelToHost,
@@ -149,8 +150,8 @@ class SSHTunneledWebSocketImpl extends WebSocketImpl {
         ? Uri.parse('https' + '$uri'.substring(3))
         : Uri.parse('http' + '$uri'.substring(2));
 
-    if (!tunneledSocket.connected && !tunneledSocket.connecting) {
-      tunneledSocket = await connectUri(uri, tunneledSocket,
+    if (!tunneledSocket!.connected && !tunneledSocket!.connecting) {
+      tunneledSocket = await connectUri(uri, tunneledSocket!,
           secureUpgrade: (SocketInterface x) async =>
               SocketImpl(await io.SecureSocket.secure(
                 SocketAdaptor(x),
@@ -172,7 +173,7 @@ class SSHTunneledWebSocketImpl extends WebSocketImpl {
     final HttpResponse response = await httpRequest(
       uri,
       'GET',
-      tunneledSocket,
+      tunneledSocket!,
       requestHeaders: <String, String>{
         'Connection': 'upgrade',
         'Upgrade': 'websocket',
