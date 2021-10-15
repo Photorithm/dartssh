@@ -80,7 +80,7 @@ Identity parsePem(String text,
       switch (openssh.kdfname) {
         case 'bcrypt':
           OpenSSHBCryptKDFOptions kdfoptions = OpenSSHBCryptKDFOptions()
-            ..deserialize(SerializableInput(openssh.kdfoptions));
+            ..deserialize(SerializableInput(openssh.kdfoptions!));
           int cipherAlgo;
           if (openssh.ciphername == 'aes256-cbc') {
             cipherAlgo = Cipher.AES256_CBC;
@@ -91,14 +91,14 @@ Identity parsePem(String text,
               false,
               Uint8List.fromList(
                   (getPassword != null ? getPassword() : '').codeUnits),
-              kdfoptions.salt,
-              kdfoptions.rounds,
-              openssh.privatekey,
+              kdfoptions.salt!,
+              kdfoptions.rounds!,
+              openssh.privatekey!,
               cipherAlgo);
           break;
 
         case 'none':
-          privateKey = openssh.privatekey;
+          privateKey = openssh.privatekey!;
           break;
 
         default:
@@ -113,8 +113,8 @@ Identity parsePem(String text,
             ..deserialize(input);
           if (identity.ed25519 != null) throw FormatException();
           identity.ed25519 =
-              tweetnacl.Signature.keyPair_fromSecretKey(ed25519.privkey);
-          if (!equalUint8List(identity.ed25519.publicKey, ed25519.pubkey)) {
+              tweetnacl.Signature.keyPair_fromSecretKey(ed25519.privkey!);
+          if (!equalUint8List(identity.ed25519!.publicKey, ed25519.pubkey!)) {
             throw FormatException();
           }
           return identity;
@@ -127,26 +127,26 @@ Identity parsePem(String text,
           }
           return identity
             ..rsaPublic =
-                asymmetric.RSAPublicKey(rsaPrivateKey.n, rsaPrivateKey.e)
-            ..rsaPrivate = asymmetric.RSAPrivateKey(rsaPrivateKey.n,
-                rsaPrivateKey.d, rsaPrivateKey.p, rsaPrivateKey.q);
+                asymmetric.RSAPublicKey(rsaPrivateKey.n!, rsaPrivateKey.e!)
+            ..rsaPrivate = asymmetric.RSAPrivateKey(rsaPrivateKey.n!,
+                rsaPrivateKey.d!, rsaPrivateKey.p, rsaPrivateKey.q);
 
         default:
           if (type.startsWith('ecdsa-')) {
             OpenSSHECDSAPrivateKey ecdsaPrivateKey = OpenSSHECDSAPrivateKey()
               ..deserialize(input);
             ECDomainParameters curve =
-                Key.ellipticCurve(ecdsaPrivateKey.keyTypeId);
+                Key.ellipticCurve(ecdsaPrivateKey.keyTypeId!)!;
             if (identity.ecdsaPublic != null || identity.ecdsaPrivate != null) {
               throw FormatException();
             }
             identity
-              ..ecdsaKeyType = ecdsaPrivateKey.keyTypeId
-              ..ecdsaPublic =
-                  ECPublicKey(curve.curve.decodePoint(ecdsaPrivateKey.q), curve)
+              ..ecdsaKeyType = ecdsaPrivateKey.keyTypeId!
+              ..ecdsaPublic = ECPublicKey(
+                  curve.curve.decodePoint(ecdsaPrivateKey.q!), curve)
               ..ecdsaPrivate = ECPrivateKey(ecdsaPrivateKey.d, curve);
 
-            if (curve.G * identity.ecdsaPrivate.d != identity.ecdsaPublic.Q) {
+            if (curve.G * identity.ecdsaPrivate!.d != identity.ecdsaPublic!.Q) {
               throw FormatException();
             }
             return identity;
@@ -163,9 +163,10 @@ Identity parsePem(String text,
         throw FormatException();
       }
       return identity
-        ..rsaPublic = asymmetric.RSAPublicKey(rsaPrivateKey.n, rsaPrivateKey.e)
-        ..rsaPrivate = asymmetric.RSAPrivateKey(
-            rsaPrivateKey.n, rsaPrivateKey.d, rsaPrivateKey.p, rsaPrivateKey.q);
+        ..rsaPublic =
+            asymmetric.RSAPublicKey(rsaPrivateKey.n!, rsaPrivateKey.e!)
+        ..rsaPrivate = asymmetric.RSAPrivateKey(rsaPrivateKey.n!,
+            rsaPrivateKey.d!, rsaPrivateKey.p, rsaPrivateKey.q);
 
     default:
       throw FormatException('type not supported: $type');
@@ -174,16 +175,16 @@ Identity parsePem(String text,
 
 /// https://tools.ietf.org/html/rfc3447#appendix-A.1.2
 class RSAPrivateKey extends Serializable {
-  BigInt version, n, e, d, p, q, exponent1, exponent2, coefficient;
+  BigInt? version, n, e, d, p, q, exponent1, exponent2, coefficient;
 
   @override
-  int get serializedSize => null;
+  int get serializedSize => 0;
 
   /// https://gist.github.com/proteye/982d9991922276ccfb011dfc55443d74
   @override
   void deserialize(SerializableInput input) {
     ASN1Parser asn1Parser = ASN1Parser(input.viewRemaining());
-    ASN1Sequence pkSeq = asn1Parser.nextObject();
+    ASN1Sequence pkSeq = asn1Parser.nextObject() as ASN1Sequence;
     version = (pkSeq.elements[0] as ASN1Integer).valueAsBigInteger;
     n = (pkSeq.elements[1] as ASN1Integer).valueAsBigInteger;
     e = (pkSeq.elements[2] as ASN1Integer).valueAsBigInteger;
@@ -203,9 +204,9 @@ class RSAPrivateKey extends Serializable {
 
 /// https://github.com/openssh/openssh-portable/blob/master/PROTOCOL.key
 class OpenSSHKey extends Serializable {
-  String magic = 'openssh-key-v1', ciphername, kdfname;
-  Uint8List kdfoptions, privatekey;
-  List<Uint8List> publickeys;
+  String? magic = 'openssh-key-v1', ciphername, kdfname;
+  Uint8List? kdfoptions, privatekey;
+  List<Uint8List>? publickeys;
   OpenSSHKey([this.ciphername, this.kdfname, this.kdfoptions, this.privatekey]);
 
   @override
@@ -214,11 +215,11 @@ class OpenSSHKey extends Serializable {
   @override
   int get serializedSize =>
       serializedHeaderSize +
-      ciphername.length +
-      kdfname.length +
-      kdfoptions.length +
-      privatekey.length +
-      publickeys.fold(0, (v, e) => v += e.length);
+      ciphername!.length +
+      kdfname!.length +
+      kdfoptions!.length +
+      privatekey!.length +
+      publickeys!.fold(0, (v, e) => v += e.length);
 
   @override
   void deserialize(SerializableInput input) {
@@ -229,23 +230,23 @@ class OpenSSHKey extends Serializable {
     ciphername = deserializeString(input);
     kdfname = deserializeString(input);
     kdfoptions = deserializeStringBytes(input);
-    publickeys = List<Uint8List>(input.getUint32());
-    for (int i = 0; i < publickeys.length; i++) {
-      publickeys[i] = deserializeStringBytes(input);
+    publickeys = List.filled(input.getUint32(), Uint8List.fromList([]));
+    for (int i = 0; i < publickeys!.length; i++) {
+      publickeys![i] = deserializeStringBytes(input);
     }
     privatekey = deserializeStringBytes(input);
   }
 
   @override
   void serialize(SerializableOutput output) {
-    output.addBytes(magic.codeUnits);
+    output.addBytes(Uint8List.fromList(magic!.codeUnits));
     output.addUint8(0);
 
     serializeString(output, ciphername);
     serializeString(output, kdfname);
     serializeString(output, kdfoptions);
-    output.addUint32(publickeys.length);
-    for (Uint8List publickey in publickeys) {
+    output.addUint32(publickeys!.length);
+    for (Uint8List publickey in publickeys!) {
       serializeString(output, publickey);
     }
     serializeString(output, privatekey);
@@ -282,8 +283,8 @@ class OpenSSHPrivateKeyHeader extends Serializable {
 
 /// https://github.com/openssh/openssh-portable/blob/master/sshkey.c#L3274
 class OpenSSHRSAPrivateKey extends Serializable {
-  String keytype = 'ssh-rsa', comment;
-  BigInt n, e, d, iqmp, p, q;
+  String? keytype = 'ssh-rsa', comment;
+  BigInt? n, e, d, iqmp, p, q;
   OpenSSHRSAPrivateKey();
 
   @override
@@ -292,13 +293,13 @@ class OpenSSHRSAPrivateKey extends Serializable {
   @override
   int get serializedSize =>
       serializedHeaderSize +
-      mpIntLength(n) +
-      mpIntLength(e) +
-      mpIntLength(d) +
-      mpIntLength(iqmp) +
-      mpIntLength(p) +
-      mpIntLength(q) +
-      comment.length;
+      mpIntLength(n!) +
+      mpIntLength(e!) +
+      mpIntLength(d!) +
+      mpIntLength(iqmp!) +
+      mpIntLength(p!) +
+      mpIntLength(q!) +
+      comment!.length;
 
   @override
   void deserialize(SerializableInput input) {
@@ -321,10 +322,10 @@ class OpenSSHRSAPrivateKey extends Serializable {
 
 /// https://github.com/openssh/openssh-portable/blob/master/sshkey.c#L3223
 class OpenSSHECDSAPrivateKey extends Serializable {
-  String keytype, curveName, comment;
-  int keyTypeId;
-  Uint8List q;
-  BigInt d;
+  String? keytype, curveName, comment;
+  int? keyTypeId;
+  Uint8List? q;
+  BigInt? d;
   OpenSSHECDSAPrivateKey();
 
   @override
@@ -333,17 +334,17 @@ class OpenSSHECDSAPrivateKey extends Serializable {
   @override
   int get serializedSize =>
       serializedHeaderSize +
-      keytype.length +
-      curveName.length +
-      q.length +
-      mpIntLength(d);
+      keytype!.length +
+      curveName!.length +
+      q!.length +
+      mpIntLength(d!);
 
   @override
   void deserialize(SerializableInput input) {
     keytype = deserializeString(input);
-    if (!keytype.startsWith('ecdsa-sha2-')) throw FormatException('$keytype');
+    if (!keytype!.startsWith('ecdsa-sha2-')) throw FormatException('$keytype');
     keyTypeId = Key.id(keytype);
-    if (!Key.ellipticCurveDSA(keyTypeId)) throw FormatException();
+    if (!Key.ellipticCurveDSA(keyTypeId!)) throw FormatException();
     curveName = deserializeString(input);
     q = deserializeStringBytes(input);
     d = deserializeMpInt(input);
@@ -356,8 +357,8 @@ class OpenSSHECDSAPrivateKey extends Serializable {
 
 /// https://github.com/openssh/openssh-portable/blob/master/sshkey.c#L2446
 class OpenSSHEd25519PrivateKey extends Serializable {
-  String keytype = 'ssh-ed25519', comment;
-  Uint8List pubkey, privkey;
+  String? keytype = 'ssh-ed25519', comment;
+  Uint8List? pubkey, privkey;
   OpenSSHEd25519PrivateKey([this.pubkey, this.privkey, this.comment]);
 
   @override
@@ -366,19 +367,19 @@ class OpenSSHEd25519PrivateKey extends Serializable {
   @override
   int get serializedSize =>
       serializedHeaderSize +
-      keytype.length +
-      pubkey.length +
-      privkey.length +
-      comment.length;
+      keytype!.length +
+      pubkey!.length +
+      privkey!.length +
+      comment!.length;
 
   @override
   void deserialize(SerializableInput input) {
     keytype = deserializeString(input);
     if (keytype != 'ssh-ed25519') throw FormatException('$keytype');
     pubkey = deserializeStringBytes(input);
-    if (pubkey.length != 32) throw FormatException('${pubkey.length}');
+    if (pubkey!.length != 32) throw FormatException('${pubkey!.length}');
     privkey = deserializeStringBytes(input);
-    if (privkey.length != 64) throw FormatException('${privkey.length}');
+    if (privkey!.length != 64) throw FormatException('${privkey!.length}');
     comment = deserializeString(input);
   }
 
@@ -393,15 +394,15 @@ class OpenSSHEd25519PrivateKey extends Serializable {
 
 /// The options: string salt, uint32 rounds are concatenated and represented as a string.
 class OpenSSHBCryptKDFOptions extends Serializable {
-  Uint8List salt;
-  int rounds;
+  Uint8List? salt;
+  int? rounds;
   OpenSSHBCryptKDFOptions([this.salt, this.rounds]);
 
   @override
   int get serializedHeaderSize => 2 * 4;
 
   @override
-  int get serializedSize => serializedHeaderSize + salt.length;
+  int get serializedSize => serializedHeaderSize + salt!.length;
 
   @override
   void deserialize(SerializableInput input) {
@@ -412,7 +413,7 @@ class OpenSSHBCryptKDFOptions extends Serializable {
   @override
   void serialize(SerializableOutput output) {
     serializeString(output, salt);
-    output.addUint32(rounds);
+    output.addUint32(rounds!);
   }
 }
 

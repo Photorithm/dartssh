@@ -4,8 +4,6 @@
 import 'dart:collection';
 import 'dart:typed_data';
 
-import 'package:dartssh/socket_html.dart'
-    if (dart.library.io) 'package:dartssh/socket_io.dart';
 import 'package:dartssh/transport.dart';
 
 enum ConnectionDirection { receive, send, both }
@@ -49,8 +47,8 @@ abstract class SocketInterface extends ConnectionInterface {
 /// Mixin for testing with shim [ConnectionInterface]s.
 mixin TestConnection {
   bool connected = false, connecting = false, closed = false;
-  Uint8ListCallback messageHandler;
-  StringCallback errorHandler, doneHandler;
+  late Uint8ListCallback messageHandler;
+  late StringCallback errorHandler, doneHandler;
   Queue<String> sent = Queue<String>();
 
   void close() => closed = true;

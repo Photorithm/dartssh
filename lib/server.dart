@@ -26,18 +26,18 @@ class SSHServer extends SSHTransport {
   GexRequest? gexRequest;
 
   SSHServer(Identity hostkey,
-      {Uri hostport,
+      {Uri? hostport,
       bool compress = false,
-      List<Forward> forwardLocal,
-      List<Forward> forwardRemote,
-      VoidCallback disconnected,
-      ResponseCallback response,
-      StringCallback print,
-      StringCallback debugPrint,
-      StringCallback tracePrint,
-      SocketInterface socket,
-      Random random,
-      SecureRandom secureRandom,
+      List<Forward>? forwardLocal,
+      List<Forward>? forwardRemote,
+      VoidCallback? disconnected,
+      ResponseCallback? response,
+      StringCallback? print,
+      StringCallback? debugPrint,
+      StringCallback? tracePrint,
+      SocketInterface? socket,
+      Random? random,
+      SecureRandom? secureRandom,
       this.directTcpRequest,
       this.userAuthRequest,
       this.sessionChannelRequest,
@@ -154,33 +154,34 @@ class SSHServer extends SSHTransport {
   }
 
   void handleX25519MSG_KEX_ECDH_INIT(MSG_KEX_ECDH_INIT msg) {
-    initializeDiffieHellman(kexMethod, random);
-    K = x25519dh.computeSecret(msg.qC);
-    Uint8List kS = identity.getRawPublicKey(hostkeyType);
+    initializeDiffieHellman(kexMethod, random!);
+    K = x25519dh.computeSecret(msg.qC!);
+    Uint8List kS = identity!.getRawPublicKey(hostkeyType);
     updateExchangeHash(kS);
     writeClearOrEncrypted(MSG_KEX_ECDH_REPLY(x25519dh.myPubKey, kS,
-        identity.signMessage(hostkeyType, exH, getSecureRandom())));
+        identity!.signMessage(hostkeyType, exH, getSecureRandom())!));
     sendNewKeys();
   }
 
   void handleEcDhMSG_KEX_ECDH_INIT(MSG_KEX_ECDH_INIT msg) {
-    initializeDiffieHellman(kexMethod, random);
-    K = ecdh.computeSecret(msg.qC);
-    Uint8List kS = identity.getRawPublicKey(hostkeyType);
+    initializeDiffieHellman(kexMethod, random!);
+    K = ecdh.computeSecret(msg.qC!);
+    Uint8List kS = identity!.getRawPublicKey(hostkeyType);
     updateExchangeHash(kS);
     writeClearOrEncrypted(MSG_KEX_ECDH_REPLY(ecdh.cText, kS,
-        identity.signMessage(hostkeyType, exH, getSecureRandom())));
+        identity!.signMessage(hostkeyType, exH, getSecureRandom())!));
     sendNewKeys();
   }
 
   void handleDhMSG_KEXDH_INIT(int packetId, MSG_KEXDH_INIT msg) {
     if (packetId != MSG_KEX_DH_GEX_INIT.ID) {
-      initializeDiffieHellman(kexMethod, random);
+      initializeDiffieHellman(kexMethod, random!);
     }
-    K = dh.computeSecret(msg.e);
-    Uint8List kS = identity.getRawPublicKey(hostkeyType);
+    K = dh.computeSecret(msg.e!);
+    Uint8List kS = identity!.getRawPublicKey(hostkeyType);
     updateExchangeHash(kS);
-    Uint8List hSig = identity.signMessage(hostkeyType, exH, getSecureRandom());
+    Uint8List hSig =
+        identity!.signMessage(hostkeyType, exH, getSecureRandom())!;
     writeClearOrEncrypted(packetId == MSG_KEX_DH_GEX_INIT.ID
         ? MSG_KEX_DH_GEX_REPLY(dh.e, kS, hSig)
         : MSG_KEXDH_REPLY(dh.e, kS, hSig));
@@ -193,15 +194,15 @@ class SSHServer extends SSHTransport {
       DiffieHellman group14 = DiffieHellman.group14();
       group = MapEntry<BigInt, BigInt>(group14.p, group14.g);
     }
-    initializeDiffieHellman(kexMethod, random);
-    initializeDiffieHellmanGroup(group.key, group.value, random);
+    initializeDiffieHellman(kexMethod, random!);
+    initializeDiffieHellmanGroup(group.key, group.value, random!);
     writeClearOrEncrypted(MSG_KEX_DH_GEX_GROUP(group.key, group.value));
   }
 
   void handleMSG_SERVICE_REQUEST(MSG_SERVICE_REQUEST msg) {
     switch (msg.serviceName) {
       case 'ssh-userauth':
-        writeCipher(MSG_SERVICE_ACCEPT(msg.serviceName));
+        writeCipher(MSG_SERVICE_ACCEPT(msg.serviceName!));
         break;
 
       default:
@@ -211,10 +212,10 @@ class SSHServer extends SSHTransport {
 
   void handleMSG_USERAUTH_REQUEST(MSG_USERAUTH_REQUEST msg) {
     if (tracePrint != null) {
-      tracePrint('$hostport: MSG_USERAUTH_REQUEST: $msg');
+      tracePrint!('$hostport: MSG_USERAUTH_REQUEST: $msg');
     }
 
-    if (userAuthRequest != null && userAuthRequest(msg)) {
+    if (userAuthRequest != null && userAuthRequest!(msg)) {
       writeCipher(MSG_USERAUTH_SUCCESS());
     } else {
       writeCipher(MSG_USERAUTH_FAILURE());
@@ -230,17 +231,17 @@ class SSHServer extends SSHTransport {
         throw const FormatException('already started session');
       }
       sessionChannel = acceptChannel(msg);
-      writeCipher(MSG_CHANNEL_OPEN_CONFIRMATION(sessionChannel.remoteId,
-          sessionChannel.localId, sessionChannel.windowS, maxPacketSize));
+      writeCipher(MSG_CHANNEL_OPEN_CONFIRMATION(sessionChannel!.remoteId!,
+          sessionChannel!.localId, sessionChannel!.windowS, maxPacketSize));
     } else if (msg.channelType == 'direct-tcpip' && directTcpRequest != null) {
       MSG_CHANNEL_OPEN_TCPIP tcpip = MSG_CHANNEL_OPEN_TCPIP()
         ..deserialize(packetS);
       final Channel tcpipChannel = acceptChannel(msg);
-      directTcpRequest(tcpipChannel, tcpip.srcHost, tcpip.srcPort,
-              tcpip.dstHost, tcpip.dstPort)
+      directTcpRequest!(tcpipChannel, tcpip.srcHost!, tcpip.srcPort!,
+              tcpip.dstHost!, tcpip.dstPort!)
           .then((String? error) {
         if (error == null) {
-          writeCipher(MSG_CHANNEL_OPEN_CONFIRMATION(tcpipChannel.remoteId,
+          writeCipher(MSG_CHANNEL_OPEN_CONFIRMATION(tcpipChannel.remoteId!,
               tcpipChannel.localId, tcpipChannel.windowS, maxPacketSize));
         } else {
           writeCipher(MSG_CHANNEL_OPEN_FAILURE(msg.senderChannel, 0, '', ''));
@@ -262,13 +263,13 @@ class SSHServer extends SSHTransport {
     final Channel? chan = channels[msg.recipientChannel];
     if (chan == sessionChannel &&
         sessionChannelRequest != null &&
-        sessionChannelRequest!(this, msg.requestType)) {
+        sessionChannelRequest!(this, msg.requestType!)) {
       if (msg.wantReply) {
-        writeCipher(MSG_CHANNEL_SUCCESS(chan!.remoteId));
+        writeCipher(MSG_CHANNEL_SUCCESS(chan!.remoteId!));
       }
     } else {
       if (msg.wantReply) {
-        writeCipher(MSG_CHANNEL_FAILURE(chan != null ? chan.remoteId : 0));
+        writeCipher(MSG_CHANNEL_FAILURE(chan != null ? chan.remoteId! : 0));
       }
     }
   }
@@ -281,7 +282,7 @@ class SSHServer extends SSHTransport {
   @override
   void handleChannelData(Channel channel, Uint8List data) {
     if (channel == sessionChannel) {
-      response(this, utf8.decode(data));
+      response!(this, utf8.decode(data));
     } else {
       channel.cb?.call(channel, data);
     }

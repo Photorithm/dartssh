@@ -18,8 +18,8 @@ mixin SSHDiffieHellman {
   DiffieHellman dh = DiffieHellman();
   EllipticCurveDiffieHellman ecdh = EllipticCurveDiffieHellman();
   X25519DiffieHellman x25519dh = X25519DiffieHellman();
-  Digest kexHash;
-  BigInt K;
+  Digest? kexHash;
+  BigInt? K;
 
   void initializeDiffieHellman(int kexMethod, Random random) {
     if (KEX.x25519DiffieHellman(kexMethod)) {
@@ -27,8 +27,8 @@ mixin SSHDiffieHellman {
       x25519dh.generatePair(random);
     } else if (KEX.ellipticCurveDiffieHellman(kexMethod)) {
       kexHash = KEX.ellipticCurveHash(kexMethod);
-      ecdh = EllipticCurveDiffieHellman(
-          KEX.ellipticCurve(kexMethod), KEX.ellipticCurveSecretBits(kexMethod));
+      ecdh = EllipticCurveDiffieHellman(KEX.ellipticCurve(kexMethod)!,
+          KEX.ellipticCurveSecretBits(kexMethod)!);
       ecdh.generatePair(random);
     } else if (KEX.diffieHellmanGroupExchange(kexMethod)) {
       if (kexMethod == KEX.DHGEX_SHA1) {
@@ -57,16 +57,16 @@ mixin SSHDiffieHellman {
 
 /// https://tools.ietf.org/html/rfc7748#section-6
 class X25519DiffieHellman {
-  Uint8List myPrivKey, myPubKey, remotePubKey;
+  Uint8List? myPrivKey, myPubKey, remotePubKey;
 
   void generatePair(Random random) {
     myPrivKey = randBytes(random, 32);
-    myPubKey = ScalarMult.scalseMult_base(myPrivKey);
+    myPubKey = ScalarMult.scalseMult_base(myPrivKey!);
   }
 
   BigInt computeSecret(Uint8List remotePubKey) {
     this.remotePubKey = remotePubKey;
-    return decodeBigInt(ScalarMult.scalseMult(myPrivKey, remotePubKey));
+    return decodeBigInt(ScalarMult.scalseMult(myPrivKey!, remotePubKey)!);
   }
 }
 
@@ -74,26 +74,26 @@ class X25519DiffieHellman {
 /// generates a shared secret from an ephemeral local elliptic curve
 /// private key and ephemeral remote elliptic curve public key.
 class EllipticCurveDiffieHellman {
-  ECDomainParameters curve;
-  int secretBits;
-  BigInt x;
-  Uint8List cText, sText;
+  ECDomainParameters? curve;
+  int? secretBits;
+  BigInt? x;
+  Uint8List? cText, sText;
   EllipticCurveDiffieHellman([this.curve, this.secretBits]);
 
   /// Generate ephemeral key pair.
   void generatePair(Random random) {
     do {
-      x = decodeBigInt(randBits(random, secretBits)) % curve.n;
+      x = decodeBigInt(randBits(random, secretBits!)) % curve!.n;
     } while (x == BigInt.zero);
-    ECPoint c = curve.G * x;
+    ECPoint c = (curve!.G * x)!;
     cText = c.getEncoded(false);
   }
 
   /// Compute shared secret.
   BigInt computeSecret(Uint8List sText) {
     this.sText = sText;
-    ECPoint s = curve.curve.decodePoint(sText);
-    return (s * x).x.toBigInteger();
+    ECPoint s = curve!.curve.decodePoint(sText)!;
+    return (s * x)!.x!.toBigInteger()!;
   }
 }
 
@@ -101,8 +101,8 @@ class EllipticCurveDiffieHellman {
 /// cannot be determined by either party alone.
 /// https://tools.ietf.org/html/rfc4253#section-8
 class DiffieHellman {
-  int gexMin = 1024, gexMax = 8192, gexPref = 2048, secretBits;
-  BigInt g, p, x, e, f;
+  int? gexMin = 1024, gexMax = 8192, gexPref = 2048, secretBits;
+  BigInt? g, p, x, e, f;
   DiffieHellman([this.p, this.g, this.secretBits]);
 
   /// https://tools.ietf.org/html/rfc2409 Second Oakley Group
@@ -504,10 +504,10 @@ class DiffieHellman {
         ]));
 
   void generatePair(Random random) {
-    if (secretBits % 8 != 0) throw FormatException();
-    x = decodeBigInt(randBytes(random, secretBits ~/ 8));
-    e = g.modPow(x, p);
+    if (secretBits! % 8 != 0) throw FormatException();
+    x = decodeBigInt(randBytes(random, secretBits! ~/ 8));
+    e = g!.modPow(x!, p!);
   }
 
-  BigInt computeSecret(BigInt f) => (this.f = f).modPow(x, p);
+  BigInt computeSecret(BigInt f) => (this.f = f).modPow(x!, p!);
 }

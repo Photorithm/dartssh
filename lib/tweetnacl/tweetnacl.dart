@@ -618,8 +618,8 @@ class Signature {
   //Length of signature in bytes.
   static const int signatureLength = 64;
 
-  final Uint8List _theirPublicKey;
-  final Uint8List _mySecretKey;
+  final Uint8List? _theirPublicKey;
+  final Uint8List? _mySecretKey;
 
   Signature(this._theirPublicKey, this._mySecretKey);
 

@@ -381,53 +381,54 @@ abstract class SSHTransport with SSHDiffieHellman {
     if (tracePrint != null) tracePrint!('$hostport: MSG_KEXINIT $msg');
 
     if (client) {
-      guessedS = msg.firstKexPacketFollows;
+      guessedS = msg.firstKexPacketFollows!;
       kexInitS = packet.sublist(0, packetLen - packetMacLen);
     } else {
-      guessedC = msg.firstKexPacketFollows;
+      guessedC = msg.firstKexPacketFollows!;
       kexInitC = packet.sublist(0, packetLen - packetMacLen);
     }
 
     /// Make sure we can agree on an algorithm suite.
-    if (0 == (kexMethod = KEX.preferenceIntersect(msg.kexAlgorithms, server))) {
+    if (0 ==
+        (kexMethod = KEX.preferenceIntersect(msg.kexAlgorithms!, server))) {
       throw FormatException('$hostport: negotiate kex');
     } else if (0 ==
         (hostkeyType =
-            Key.preferenceIntersect(msg.serverHostKeyAlgorithms, server))) {
+            Key.preferenceIntersect(msg.serverHostKeyAlgorithms!, server))) {
       throw FormatException('$hostport: negotiate hostkey');
     } else if (0 ==
         (cipherIdC2s = Cipher.preferenceIntersect(
-            msg.encryptionAlgorithmsClientToServer, server))) {
+            msg.encryptionAlgorithmsClientToServer!, server))) {
       throw FormatException('$hostport: negotiate c2s cipher');
     } else if (0 ==
         (cipherIdS2c = Cipher.preferenceIntersect(
-            msg.encryptionAlgorithmsServerToClient, server))) {
+            msg.encryptionAlgorithmsServerToClient!, server))) {
       throw FormatException('$hostport: negotiate s2c cipher');
     } else if (0 ==
-        (macIdC2s =
-            MAC.preferenceIntersect(msg.macAlgorithmsClientToServer, server))) {
+        (macIdC2s = MAC.preferenceIntersect(
+            msg.macAlgorithmsClientToServer!, server))) {
       throw FormatException('$hostport: negotiate c2s mac');
     } else if (0 ==
-        (macIdS2c =
-            MAC.preferenceIntersect(msg.macAlgorithmsServerToClient, server))) {
+        (macIdS2c = MAC.preferenceIntersect(
+            msg.macAlgorithmsServerToClient!, server))) {
       throw FormatException('$hostport: negotiate s2c mac');
     } else if (0 ==
         (compressIdC2s = Compression.preferenceIntersect(
-            msg.compressionAlgorithmsClientToServer,
+            msg.compressionAlgorithmsClientToServer!,
             server,
             compress! ? 0 : 1))) {
       throw FormatException('$hostport: negotiate c2s compression');
     } else if (0 ==
         (compressIdS2c = Compression.preferenceIntersect(
-            msg.compressionAlgorithmsServerToClient,
+            msg.compressionAlgorithmsServerToClient!,
             server,
             compress! ? 0 : 1))) {
       throw FormatException('$hostport: negotiate s2c compression');
     }
 
     /// Setup connection and start Diffie Hellman key exchange.
-    guessedRightS = kexMethod == KEX.id(msg.kexAlgorithms.split(',')[0]) &&
-        hostkeyType == Key.id(msg.serverHostKeyAlgorithms.split(',')[0]);
+    guessedRightS = kexMethod == KEX.id(msg.kexAlgorithms!.split(',')[0]) &&
+        hostkeyType == Key.id(msg.serverHostKeyAlgorithms!.split(',')[0]);
     guessedRightC = kexMethod == 1 && hostkeyType == 1;
     encryptBlockSize = Cipher.blockSize(cipherIdC2s);
     decryptBlockSize = Cipher.blockSize(cipherIdS2c);
@@ -510,7 +511,7 @@ abstract class SSHTransport with SSHDiffieHellman {
       throw FormatException('$hostport: open invalid channel');
     }
     chan.remoteId = msg.senderChannel;
-    chan.windowC = msg.initialWinSize;
+    chan.windowC = msg.initialWinSize!;
     chan.opened = true;
     handleChannelOpenConfirmation(chan);
   }
@@ -527,7 +528,7 @@ abstract class SSHTransport with SSHDiffieHellman {
       throw FormatException('$hostport: fail invalid channel');
     }
 
-    handleChannelClose(chan, msg.description);
+    handleChannelClose(chan, msg.description!);
     channels.remove(msg.recipientChannel);
   }
 
@@ -549,7 +550,7 @@ abstract class SSHTransport with SSHDiffieHellman {
   void handleMSG_CHANNEL_DATA(MSG_CHANNEL_DATA msg) {
     if (tracePrint != null) {
       tracePrint!(
-          '$hostport: MSG_CHANNEL_DATA: channel ${msg.recipientChannel} : ${msg.data.length} bytes');
+          '$hostport: MSG_CHANNEL_DATA: channel ${msg.recipientChannel} : ${msg.data!.length} bytes');
     }
     Channel? chan = channels[msg.recipientChannel];
     if (chan == null) {
@@ -561,7 +562,7 @@ abstract class SSHTransport with SSHDiffieHellman {
           MSG_CHANNEL_WINDOW_ADJUST(chan.remoteId!, initialWindowSize));
       chan.windowS += initialWindowSize;
     }
-    handleChannelData(chan, msg.data);
+    handleChannelData(chan, msg.data!);
   }
 
   /// No explicit response is sent to this message.  However, the application
@@ -718,7 +719,7 @@ abstract class SSHTransport with SSHDiffieHellman {
     Channel channel = channels[nextChannelId] = Channel();
     channel.localId = nextChannelId;
     channel.remoteId = msg.senderChannel;
-    channel.windowC = msg.initialWinSize;
+    channel.windowC = msg.initialWinSize!;
     channel.windowS = initialWindowSize;
     channel.opened = true;
     nextChannelId++;
