@@ -137,11 +137,11 @@ class SSHTunneledWebSocketImpl extends WebSocketImpl {
   SSHTunneledWebSocketImpl(SSHTunneledSocketImpl inputSocket)
       // ignore: prefer_initializing_formals
       : tunneledSocket = inputSocket,
-        sourceHost = inputSocket.sourceHost,
-        tunnelToHost = inputSocket.tunnelToHost,
-        sourcePort = inputSocket.sourcePort,
-        tunnelToPort = inputSocket.tunnelToPort,
-        debugPrint = inputSocket.client.debugPrint;
+        sourceHost = inputSocket.sourceHost!,
+        tunnelToHost = inputSocket.tunnelToHost!,
+        sourcePort = inputSocket.sourcePort!,
+        tunnelToPort = inputSocket.tunnelToPort!,
+        debugPrint = inputSocket.client!.debugPrint;
 
   @override
   void connect(Uri uri, VoidCallback onConnected, StringCallback onError,
@@ -154,7 +154,11 @@ class SSHTunneledWebSocketImpl extends WebSocketImpl {
       tunneledSocket = await connectUri(uri, tunneledSocket!,
           secureUpgrade: (SocketInterface x) async =>
               SocketImpl(await io.SecureSocket.secure(
-                SocketAdaptor(x),
+                SocketAdaptor(x,
+                    address: io.InternetAddress.anyIPv4,
+                    port: 0,
+                    remoteAddress: io.InternetAddress.anyIPv4,
+                    remotePort: 0),
 
                 /// https://github.com/dart-lang/sdk/issues/39690
                 /*io.Socket.fromRaw(RawSocketAdaptor(

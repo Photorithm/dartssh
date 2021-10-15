@@ -470,13 +470,13 @@ abstract class SSHTransport with SSHDiffieHellman {
         keyLenS = Cipher.keySize(cipherIdS2c);
     encrypt = initCipher(
         cipherIdC2s,
-        deriveKey(kexHash, sessionId, exH, K, 'A'.codeUnits[0], 24),
-        deriveKey(kexHash, sessionId, exH, K, 'C'.codeUnits[0], keyLenC),
+        deriveKey(kexHash!, sessionId, exH, K!, 'A'.codeUnits[0], 24),
+        deriveKey(kexHash!, sessionId, exH, K!, 'C'.codeUnits[0], keyLenC),
         client ? true : false);
     decrypt = initCipher(
         cipherIdS2c,
-        deriveKey(kexHash, sessionId, exH, K, 'B'.codeUnits[0], 24),
-        deriveKey(kexHash, sessionId, exH, K, 'D'.codeUnits[0], keyLenS),
+        deriveKey(kexHash!, sessionId, exH, K!, 'B'.codeUnits[0], 24),
+        deriveKey(kexHash!, sessionId, exH, K!, 'D'.codeUnits[0], keyLenS),
         client ? false : true);
     if ((macHashLenC = MAC.hashSize(macIdC2s)) <= 0) {
       throw FormatException('$hostport: invalid maclen $encryptBlockSize');
@@ -484,9 +484,9 @@ abstract class SSHTransport with SSHDiffieHellman {
       throw FormatException('$hostport: invalid maclen $encryptBlockSize');
     }
     integrityC2s =
-        deriveKey(kexHash, sessionId, exH, K, 'E'.codeUnits[0], macHashLenC);
+        deriveKey(kexHash!, sessionId, exH, K!, 'E'.codeUnits[0], macHashLenC);
     integrityS2c =
-        deriveKey(kexHash, sessionId, exH, K, 'F'.codeUnits[0], macHashLenS);
+        deriveKey(kexHash!, sessionId, exH, K!, 'F'.codeUnits[0], macHashLenS);
     if (server) {
       BlockCipher tmpBC = encrypt;
       encrypt = decrypt;
@@ -642,8 +642,8 @@ abstract class SSHTransport with SSHDiffieHellman {
 
   /// Computes a new exchange hash [exH] given the server key [kS].
   void updateExchangeHash(Uint8List kS) {
-    exH = computeExchangeHash(server, kexMethod, kexHash, verC, verS, kexInitC,
-        kexInitS, kS, K, dh, ecdh, x25519dh);
+    exH = computeExchangeHash(server, kexMethod, kexHash!, verC, verS, kexInitC,
+        kexInitS, kS, K!, dh, ecdh, x25519dh);
 
     /// The exchange hash H from the first key exchange is used as the session identifier.
     if (state == SSHTransportState.FIRST_KEXREPLY) sessionId = exH;

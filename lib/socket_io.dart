@@ -130,10 +130,10 @@ class SocketAdaptor extends Stream<Uint8List> implements Socket {
   set encoding(Encoding value) => sink.encoding = value;
 
   SocketAdaptor(this.impl,
-      {this.address,
-      this.remoteAddress,
-      this.port,
-      this.remotePort,
+      {required this.address,
+      required this.remoteAddress,
+      required this.port,
+      required this.remotePort,
       this.debugPrint}) {
     controller = StreamController<Uint8List>(sync: true);
     consumer = SocketAdaptorStreamConsumer(this);

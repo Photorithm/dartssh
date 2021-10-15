@@ -13,14 +13,14 @@ class HttpClientImpl extends HttpClient {
   static const String type = 'io';
   io.HttpClient client = io.HttpClient();
 
-  HttpClientImpl({StringCallback debugPrint, StringFilter? userAgent})
+  HttpClientImpl({StringCallback? debugPrint, StringFilter? userAgent})
       : super(debugPrint: debugPrint) {
-    if (userAgent != null) client.userAgent = userAgent(client.userAgent);
+    if (userAgent != null) client.userAgent = userAgent(client.userAgent!);
   }
 
   @override
   Future<HttpResponse> request(String url,
-      {String method, String data, Map<String, String>? headers}) async {
+      {String? method, String? data, Map<String, String>? headers}) async {
     numOutstanding++;
 
     final Uri uri = Uri.parse(url);
@@ -40,19 +40,19 @@ class HttpClientImpl extends HttpClient {
           (String key, String value) => request.headers.set(key, value));
     }
 
-    if (debugPrint != null) debugPrint('HTTP Request: ${request.uri}');
+    if (debugPrint != null) debugPrint!('HTTP Request: ${request.uri}');
     final response = await request.close();
     final HttpResponse ret = HttpResponse(response.statusCode);
     await for (final contents in response.transform(const Utf8Decoder())) {
       if (ret.text == null) {
         ret.text = contents;
       } else {
-        ret.text += contents;
+        ret.text = ret.text! + contents;
       }
     }
 
     if (debugPrint != null) {
-      debugPrint('HTTP Response=${ret.status}: ${ret.text}');
+      debugPrint!('HTTP Response=${ret.status}: ${ret.text}');
     }
     numOutstanding--;
     return ret;

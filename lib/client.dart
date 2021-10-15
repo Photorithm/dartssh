@@ -24,8 +24,8 @@ import 'package:pointycastle/api.dart';
 class SSHClient extends SSHTransport with SSHAgentForwarding {
   // Parameters
   String? login;
-  String termvar, startupCommand;
-  bool agentForwarding, closeOnDisconnect, startShell;
+  String? termvar, startupCommand;
+  bool? agentForwarding, closeOnDisconnect, startShell;
   FingerprintCallback? acceptHostFingerprint;
   Uint8ListFunction? getPassword;
   IdentityFunction? loadIdentity;
@@ -35,10 +35,10 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   int loginPrompts = 0, passwordPrompts = 0, userauthFail = 0;
   bool acceptedHostkey = false, loadedPw = false, wrotePw = false;
   Uint8List? pw;
-  int termWidth, termHeight;
+  int? termWidth, termHeight;
 
   SSHClient(
-      {Uri hostport,
+      {Uri? hostport,
       this.login,
       this.termvar = '',
       this.termWidth = 80,
@@ -48,20 +48,20 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
       this.agentForwarding = false,
       this.closeOnDisconnect,
       this.startShell = true,
-      List<Forward> forwardLocal,
-      List<Forward> forwardRemote,
-      VoidCallback disconnected,
-      ResponseCallback response,
-      StringCallback print,
+      List<Forward>? forwardLocal,
+      List<Forward>? forwardRemote,
+      VoidCallback? disconnected,
+      ResponseCallback? response,
+      StringCallback? print,
       StringCallback? debugPrint,
-      StringCallback tracePrint,
+      StringCallback? tracePrint,
       VoidCallback? success,
       this.acceptHostFingerprint,
       this.loadIdentity,
       this.getPassword,
-      SocketInterface socketInput,
-      Random random,
-      SecureRandom secureRandom})
+      SocketInterface? socketInput,
+      Random? random,
+      SecureRandom? secureRandom})
       : super(false,
             hostport: hostport,
             compress: compress,
@@ -82,12 +82,12 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
       if (debugPrint != null) {
         debugPrint('Connecting to $hostport');
       }
-      socket = (hostport.hasScheme &&
+      socket = (hostport!.hasScheme &&
               (hostport.scheme == 'ws' || hostport.scheme == 'wss'))
           ? WebSocketImpl()
           : SocketImpl();
 
-      socket.connect(
+      socket!.connect(
           hostport, onConnected, (error) => disconnect('connect error'));
     }
   }
@@ -208,7 +208,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   /// Initialize a shared-secret negotiation culminating with [MSG_NEWKEYS].
   @override
   void sendDiffileHellmanInit() {
-    initializeDiffieHellman(kexMethod, random);
+    initializeDiffieHellman(kexMethod, random!);
     if (KEX.x25519DiffieHellman(kexMethod)) {
       writeClearOrEncrypted(MSG_KEX_ECDH_INIT(x25519dh.myPubKey));
     } else if (KEX.ellipticCurveDiffieHellman(kexMethod)) {
@@ -237,7 +237,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
       return;
     }
 
-    Uint8List fingerprint;
+    Uint8List? fingerprint;
     if (packetId == MSG_KEX_ECDH_REPLY.ID &&
         KEX.x25519DiffieHellman(kexMethod)) {
       fingerprint = handleX25519MSG_KEX_ECDH_REPLY(
@@ -261,7 +261,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
 
     if (state == SSHTransportState.FIRST_KEXREPLY) {
       if (acceptHostFingerprint != null) {
-        acceptedHostkey = acceptHostFingerprint(hostkeyType, fingerprint);
+        acceptedHostkey = acceptHostFingerprint!(hostkeyType, fingerprint!);
       } else {
         acceptedHostkey = true;
       }
@@ -271,15 +271,15 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   }
 
   /// Completes X25519 key exchange.
-  Uint8List handleX25519MSG_KEX_ECDH_REPLY(MSG_KEX_ECDH_REPLY msg) {
-    Uint8List fingerprint;
+  Uint8List? handleX25519MSG_KEX_ECDH_REPLY(MSG_KEX_ECDH_REPLY msg) {
+    Uint8List? fingerprint;
     if (tracePrint != null) {
-      tracePrint('$hostport: MSG_KEX_ECDH_REPLY for X25519DH');
+      tracePrint!('$hostport: MSG_KEX_ECDH_REPLY for X25519DH');
     }
-    if (!acceptedHostkey) fingerprint = msg.kS;
+    if (!acceptedHostkey) fingerprint = msg.kS!;
 
-    K = x25519dh.computeSecret(msg.qS);
-    if (!computeExchangeHashAndVerifyHostKey(msg.kS, msg.hSig)) {
+    K = x25519dh.computeSecret(msg.qS!);
+    if (!computeExchangeHashAndVerifyHostKey(msg.kS!, msg.hSig!)) {
       throw FormatException('$hostport: verify hostkey failed');
     }
 
@@ -287,15 +287,15 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   }
 
   /// Completes Elliptic-curve Diffie–Hellman key exchange.
-  Uint8List handleEcDhMSG_KEX_ECDH_REPLY(MSG_KEX_ECDH_REPLY msg) {
-    Uint8List fingerprint;
+  Uint8List? handleEcDhMSG_KEX_ECDH_REPLY(MSG_KEX_ECDH_REPLY msg) {
+    Uint8List? fingerprint;
     if (tracePrint != null) {
-      tracePrint('$hostport: MSG_KEX_ECDH_REPLY for ECDH');
+      tracePrint!('$hostport: MSG_KEX_ECDH_REPLY for ECDH');
     }
     if (!acceptedHostkey) fingerprint = msg.kS;
 
-    K = ecdh.computeSecret(msg.qS);
-    if (!computeExchangeHashAndVerifyHostKey(msg.kS, msg.hSig)) {
+    K = ecdh.computeSecret(msg.qS!);
+    if (!computeExchangeHashAndVerifyHostKey(msg.kS!, msg.hSig!)) {
       throw FormatException('$hostport: verify hostkey failed');
     }
 
@@ -305,22 +305,22 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   /// Completes Diffie-Hellman Group Exchange and begins key exchange.
   void handleDhGroupMSG_KEX_DH_GEX_GROUP(MSG_KEX_DH_GEX_GROUP msg) {
     if (tracePrint != null) {
-      tracePrint('$hostport: MSG_KEX_DH_GEX_GROUP');
+      tracePrint!('$hostport: MSG_KEX_DH_GEX_GROUP');
     }
-    initializeDiffieHellmanGroup(msg.p, msg.g, random);
+    initializeDiffieHellmanGroup(msg.p!, msg.g!, random!);
     writeClearOrEncrypted(MSG_KEX_DH_GEX_INIT(dh.e));
   }
 
   /// Completes Diffie-Hellman key exchange.
-  Uint8List handleDhMSG_KEXDH_REPLY(MSG_KEXDH_REPLY msg) {
-    Uint8List fingerprint;
+  Uint8List? handleDhMSG_KEXDH_REPLY(MSG_KEXDH_REPLY msg) {
+    Uint8List? fingerprint;
     if (tracePrint != null) {
-      tracePrint('$hostport: MSG_KEXDH_REPLY');
+      tracePrint!('$hostport: MSG_KEXDH_REPLY');
     }
     if (!acceptedHostkey) fingerprint = msg.kS;
 
-    K = dh.computeSecret(msg.f);
-    if (!computeExchangeHashAndVerifyHostKey(msg.kS, msg.hSig)) {
+    K = dh.computeSecret(msg.f!);
+    if (!computeExchangeHashAndVerifyHostKey(msg.kS!, msg.hSig!)) {
       throw FormatException('$hostport: verify hostkey failed');
     }
 
@@ -329,13 +329,13 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
 
   /// Handle accepted [MSG_SERVICE_REQUEST] sent in response to [MSG_NEWKEYS].
   void handleMSG_SERVICE_ACCEPT() {
-    if (tracePrint != null) tracePrint('$hostport: MSG_SERVICE_ACCEPT');
-    if (login == null || login.isEmpty) {
+    if (tracePrint != null) tracePrint!('$hostport: MSG_SERVICE_ACCEPT');
+    if (login == null || login!.isEmpty) {
       loginPrompts = 1;
-      response(this, 'login: ');
+      response!(this, 'login: ');
     }
     if (identity == null && loadIdentity != null) {
-      identity = loadIdentity();
+      identity = loadIdentity!();
     }
     sendAuthenticationRequest();
   }
@@ -343,13 +343,13 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   /// If key authentication failed, then try password authentication.
   void handleMSG_USERAUTH_FAILURE(MSG_USERAUTH_FAILURE msg) {
     if (tracePrint != null) {
-      tracePrint(
+      tracePrint!(
           '$hostport: MSG_USERAUTH_FAILURE: auth_left="${msg.authLeft}" loadedPw=$loadedPw useauthFail=$userauthFail');
     }
     if (!loadedPw) clearPassword();
     userauthFail++;
     if (userauthFail == 1 && !wrotePw) {
-      response(this, 'Password:');
+      response!(this, 'Password:');
       passwordPrompts = 1;
       getThenSendPassword();
     } else {
@@ -360,11 +360,11 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   /// After successfull authentication, open the session channel and start compression.
   void handleMSG_USERAUTH_SUCCESS() {
     if (tracePrint != null) {
-      tracePrint('$hostport: MSG_USERAUTH_SUCCESS');
+      tracePrint!('$hostport: MSG_USERAUTH_SUCCESS');
     }
     sessionChannel =
         Channel(localId: nextChannelId, windowS: initialWindowSize);
-    channels[nextChannelId] = sessionChannel;
+    channels[nextChannelId] = sessionChannel!;
     nextChannelId++;
 
     if (compressIdC2s == Compression.OpenSSHZLib) {
@@ -376,7 +376,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
       throw const FormatException('compression not supported');
     }
     writeCipher(MSG_CHANNEL_OPEN(
-        'session', sessionChannel.localId, initialWindowSize, maxPacketSize));
+        'session', sessionChannel!.localId, initialWindowSize, maxPacketSize));
     for (final VoidCallback successCallback in success) {
       successCallback();
     }
@@ -385,25 +385,25 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   /// The server can optionally request authentication information from the client.
   void handleMSG_USERAUTH_INFO_REQUEST(MSG_USERAUTH_INFO_REQUEST msg) {
     if (tracePrint != null) {
-      tracePrint(
-          '$hostport: MSG_USERAUTH_INFO_REQUEST prompts=${msg.prompts.length}');
+      tracePrint!(
+          '$hostport: MSG_USERAUTH_INFO_REQUEST prompts=${msg.prompts!.length}');
     }
-    if (msg.instruction.isNotEmpty) {
+    if (msg.instruction!.isNotEmpty) {
       if (tracePrint != null) {
-        tracePrint('$hostport: instruction: ${msg.instruction}');
+        tracePrint!('$hostport: instruction: ${msg.instruction}');
       }
-      response(this, msg.instruction);
+      response!(this, msg.instruction!);
     }
 
-    for (final MapEntry<String, int> prompt in msg.prompts) {
+    for (final MapEntry<String, int> prompt in msg.prompts!) {
       if (tracePrint != null) {
-        tracePrint('$hostport: prompt: ${prompt.key}');
+        tracePrint!('$hostport: prompt: ${prompt.key}');
       }
-      response(this, prompt.key);
+      response!(this, prompt.key);
     }
 
-    if (msg.prompts.isNotEmpty) {
-      passwordPrompts = msg.prompts.length;
+    if (msg.prompts!.isNotEmpty) {
+      passwordPrompts = msg.prompts!.length;
       getThenSendPassword();
     } else {
       writeCipher(MSG_USERAUTH_INFO_RESPONSE(<Uint8List>[]));
@@ -413,7 +413,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   /// Logs any (unhandled) channel specific requests from server.
   void handleMSG_CHANNEL_REQUEST(MSG_CHANNEL_REQUEST msg) {
     if (tracePrint != null) {
-      tracePrint(
+      tracePrint!(
           '$hostport: MSG_CHANNEL_REQUEST ${msg.requestType} wantReply=${msg.wantReply}');
     }
   }
@@ -422,9 +422,9 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   /// or SSH agent request.
   void handleMSG_CHANNEL_OPEN(MSG_CHANNEL_OPEN msg, SerializableInput packetS) {
     if (tracePrint != null) {
-      tracePrint('$hostport: MSG_CHANNEL_OPEN type=${msg.channelType}');
+      tracePrint!('$hostport: MSG_CHANNEL_OPEN type=${msg.channelType}');
     }
-    if (msg.channelType == 'auth-agent@openssh.com' && agentForwarding) {
+    if (msg.channelType == 'auth-agent@openssh.com' && agentForwarding!) {
       final Channel channel = acceptChannel(msg);
       channel.agentChannel = true;
       writeCipher(MSG_CHANNEL_OPEN_CONFIRMATION(
@@ -432,8 +432,9 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
     } else if (msg.channelType == 'forwarded-tcpip') {
       final MSG_CHANNEL_OPEN_TCPIP openTcpIp = MSG_CHANNEL_OPEN_TCPIP()
         ..deserialize(packetS);
-      final Forward? forward =
-          forwardingRemote == null ? null : forwardingRemote[openTcpIp.dstPort];
+      final Forward? forward = forwardingRemote == null
+          ? null
+          : forwardingRemote![openTcpIp.dstPort];
       if (forward == null || remoteForward == null) {
         if (this.print != null) {
           this.print!('unknown port open ${openTcpIp.dstPort}');
@@ -441,8 +442,8 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
         writeCipher(MSG_CHANNEL_OPEN_FAILURE(msg.senderChannel, 0, '', ''));
       } else {
         final Channel channel = acceptChannel(msg);
-        remoteForward(channel, forward.targetHost, forward.targetPort,
-            openTcpIp.srcHost, openTcpIp.srcPort);
+        remoteForward!(channel, forward.targetHost, forward.targetPort,
+            openTcpIp.srcHost!, openTcpIp.srcPort!);
         writeCipher(MSG_CHANNEL_OPEN_CONFIRMATION(
             channel.remoteId, channel.localId, channel.windowS, maxPacketSize));
       }
@@ -460,39 +461,40 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
     if (channel == sessionChannel) {
       handleSessionStarted();
     } else if (channel.connected != null) {
-      channel.connected();
+      channel.connected!();
     }
   }
 
   /// After the session is established, initialize channel state.
   void handleSessionStarted() {
-    if (agentForwarding) {
+    if (agentForwarding!) {
       writeCipher(MSG_CHANNEL_REQUEST.exec(
-          sessionChannel.remoteId, 'auth-agent-req@openssh.com', '', true));
+          sessionChannel!.remoteId!, 'auth-agent-req@openssh.com', '', true));
     }
 
     if (forwardRemote != null) {
-      for (final Forward forward in forwardRemote) {
+      for (final Forward forward in forwardRemote!) {
         writeCipher(MSG_GLOBAL_REQUEST_TCPIP('', forward.port));
-        forwardingRemote[forward.port] = forward;
+        forwardingRemote![forward.port] = forward;
       }
     }
 
-    if (startShell) {
+    if (startShell!) {
       writeCipher(MSG_CHANNEL_REQUEST.ptyReq(
-          sessionChannel.remoteId,
+          sessionChannel!.remoteId!,
           'pty-req',
-          Point(termWidth, termHeight),
-          Point(termWidth * 8, termHeight * 12),
+          Point(termWidth!, termHeight!),
+          Point(termWidth! * 8, termHeight! * 12),
           termvar,
           '',
           true));
 
-      writeCipher(
-          MSG_CHANNEL_REQUEST.exec(sessionChannel.remoteId, 'shell', '', true));
+      writeCipher(MSG_CHANNEL_REQUEST.exec(
+          sessionChannel!.remoteId!, 'shell', '', true));
 
       if ((startupCommand ?? '').isNotEmpty) {
-        sendToChannel(sessionChannel, utf8.encode(startupCommand));
+        sendToChannel(
+            sessionChannel!, Uint8List.fromList(utf8.encode(startupCommand!)));
       }
     }
   }
@@ -501,9 +503,9 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   @override
   void handleChannelData(Channel chan, Uint8List data) {
     if (chan == sessionChannel) {
-      response(this, utf8.decode(data));
+      response!(this, utf8.decode(data));
     } else if (chan.cb != null) {
-      chan.cb(chan, data);
+      chan.cb!(chan, data);
     } else if (chan.agentChannel) {
       handleAgentRead(chan, data);
     }
@@ -511,7 +513,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
 
   /// Handles [Channel] closed by server.
   @override
-  void handleChannelClose(Channel chan, [String description]) {
+  void handleChannelClose(Channel chan, [String? description]) {
     if (chan == sessionChannel) {
       writeCipher(MSG_DISCONNECT());
       sessionChannel = null;
@@ -539,15 +541,15 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   /// "Securely" clears the local password storage.
   void clearPassword() {
     if (pw == null) return;
-    for (int i = 0; i < pw.length; i++) {
-      pw[i] ^= random.nextInt(255);
+    for (int i = 0; i < pw!.length; i++) {
+      pw![i] ^= random!.nextInt(255);
     }
     pw = null;
   }
 
   /// Sends [MSG_USERAUTH_REQUEST] with password [pw].
   void sendPassword() {
-    response(this, '\r\n');
+    response!(this, '\r\n');
     wrotePw = true;
     if (userauthFail != 0) {
       writeCipher(MSG_USERAUTH_REQUEST(
@@ -555,7 +557,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
     } else {
       final List<Uint8List> prompt =
           List<Uint8List>.filled(passwordPrompts, Uint8List(0));
-      prompt.last = pw;
+      prompt.last = pw!;
       writeCipher(MSG_USERAUTH_INFO_RESPONSE(prompt));
     }
     passwordPrompts = 0;
@@ -566,40 +568,40 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   void sendAuthenticationRequest() {
     if (identity == null) {
       if (debugPrint != null) {
-        debugPrint('$hostport: Keyboard interactive');
+        debugPrint!('$hostport: Keyboard interactive');
       }
       writeCipher(MSG_USERAUTH_REQUEST(login, 'ssh-connection',
           'keyboard-interactive', '', Uint8List(0), Uint8List(0)));
     } else if (identity!.ed25519 != null) {
       if (debugPrint != null) {
-        debugPrint('$hostport: Sending Ed25519 authorization request');
+        debugPrint!('$hostport: Sending Ed25519 authorization request');
       }
-      final Uint8List pubkey = identity.getEd25519PublicKey().toRaw();
-      final Uint8List challenge = deriveChallenge(sessionId, login,
+      final Uint8List pubkey = identity!.getEd25519PublicKey().toRaw();
+      final Uint8List challenge = deriveChallenge(sessionId, login!,
           'ssh-connection', 'publickey', 'ssh-ed25519', pubkey);
-      final Ed25519Signature sig = identity.signWithEd25519Key(challenge);
+      final Ed25519Signature sig = identity!.signWithEd25519Key(challenge);
       writeCipher(MSG_USERAUTH_REQUEST(login, 'ssh-connection', 'publickey',
           'ssh-ed25519', pubkey, sig.toRaw()));
-    } else if (identity.ecdsaPrivate != null) {
+    } else if (identity!.ecdsaPrivate != null) {
       if (debugPrint != null) {
-        debugPrint('$hostport: Sending ECDSA authorization request');
+        debugPrint!('$hostport: Sending ECDSA authorization request');
       }
-      final String keyType = Key.name(identity.ecdsaKeyType);
-      final Uint8List pubkey = identity.getECDSAPublicKey().toRaw();
+      final String keyType = Key.name(identity!.ecdsaKeyType!);
+      final Uint8List pubkey = identity!.getECDSAPublicKey().toRaw();
       final Uint8List challenge = deriveChallenge(
-          sessionId, login, 'ssh-connection', 'publickey', keyType, pubkey);
+          sessionId, login!, 'ssh-connection', 'publickey', keyType, pubkey);
       final ECDSASignature sig =
-          identity.signWithECDSAKey(challenge, getSecureRandom());
+          identity!.signWithECDSAKey(challenge, getSecureRandom());
       writeCipher(MSG_USERAUTH_REQUEST(
           login, 'ssh-connection', 'publickey', keyType, pubkey, sig.toRaw()));
-    } else if (identity.rsaPrivate != null) {
+    } else if (identity!.rsaPrivate != null) {
       if (debugPrint != null) {
-        debugPrint('$hostport: Sending RSA authorization request');
+        debugPrint!('$hostport: Sending RSA authorization request');
       }
-      final Uint8List pubkey = identity.getRSAPublicKey().toRaw();
+      final Uint8List pubkey = identity!.getRSAPublicKey().toRaw();
       final Uint8List challenge = deriveChallenge(
-          sessionId, login, 'ssh-connection', 'publickey', 'ssh-rsa', pubkey);
-      final RSASignature sig = identity.signWithRSAKey(challenge);
+          sessionId, login!, 'ssh-connection', 'publickey', 'ssh-rsa', pubkey);
+      final RSASignature sig = identity!.signWithRSAKey(challenge);
       writeCipher(MSG_USERAUTH_REQUEST(login, 'ssh-connection', 'publickey',
           'ssh-rsa', pubkey, sig.toRaw()));
     }
@@ -610,11 +612,11 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
   @override
   void sendChannelData(Uint8List b) {
     if (loginPrompts != 0) {
-      response(this, utf8.decode(b));
+      response!(this, utf8.decode(b));
       final bool cr = b.isNotEmpty && b.last == '\n'.codeUnits[0];
-      login += String.fromCharCodes(b, 0, b.length - (cr ? 1 : 0));
+      login = login! + String.fromCharCodes(b, 0, b.length - (cr ? 1 : 0));
       if (cr) {
-        response(this, '\n');
+        response!(this, '\n');
         loginPrompts = 0;
         sendAuthenticationRequest();
       }
@@ -625,7 +627,7 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
       if (cr) sendPassword();
     } else {
       if (sessionChannel != null) {
-        sendToChannel(sessionChannel, b);
+        sendToChannel(sessionChannel!, b);
       }
     }
   }
@@ -636,10 +638,10 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
     termHeight = h;
     if (socket == null || sessionChannel == null) return;
     writeCipher(MSG_CHANNEL_REQUEST.ptyReq(
-        sessionChannel.remoteId,
+        sessionChannel!.remoteId!,
         'window-change',
-        Point(termWidth, termHeight),
-        Point(termWidth * 8, termHeight * 12),
+        Point(termWidth!, termHeight!),
+        Point(termWidth! * 8, termHeight! * 12),
         termvar,
         '',
         false));
@@ -649,43 +651,45 @@ class SSHClient extends SSHTransport with SSHAgentForwarding {
     assert(socket != null && sessionChannel != null);
     if (socket == null || sessionChannel == null) return;
     writeCipher(MSG_CHANNEL_REQUEST.exec(
-        sessionChannel.remoteId, 'exec', command, wantReply));
+        sessionChannel!.remoteId!, 'exec', command, wantReply));
   }
 }
 
 /// Implement same [SocketInterface] as actual [Socket] but over [SSHClient] tunnel.
 class SSHTunneledSocketImpl extends SocketInterface {
-  bool clientOwner, shutdownSend = false, shutdownRecv = false;
-  SSHClient client;
+  bool? clientOwner, shutdownSend = false, shutdownRecv = false;
+  SSHClient? client;
   Identity? identity;
   Channel? channel;
-  String sourceHost, tunnelToHost;
-  int sourcePort, tunnelToPort;
+  String? sourceHost, tunnelToHost;
+  int? sourcePort, tunnelToPort;
   VoidCallback? connectHandler;
   StringCallback? connectError, onError, onDone;
-  Uint8ListCallback onMessage;
+  Uint8ListCallback? onMessage;
 
   SSHTunneledSocketImpl.fromClient(this.client) : clientOwner = false;
 
   SSHTunneledSocketImpl(Uri url, String login, String? key, String? password,
-      {StringCallback print, StringCallback debugPrint})
+      {StringCallback? print, StringCallback? debugPrint})
       : clientOwner = true {
     identity = key == null ? null : parsePem(key);
     client = SSHClient(
         socketInput: SocketImpl(),
         hostport: url,
         login: login,
-        getPassword: password == null ? null : () => utf8.encode(password),
+        getPassword: password == null
+            ? null
+            : () => Uint8List.fromList(utf8.encode(password)),
         loadIdentity: () => identity,
         response: (_, m) {},
         disconnected: () {
           if (onDone != null) {
-            onDone('SSHTunnelledSocketImpl.client disconnected');
+            onDone!('SSHTunnelledSocketImpl.client disconnected');
           }
         },
         startShell: false,
         success: openTunnel,
-        print: print,
+        print: print!,
         debugPrint: debugPrint);
   }
 
@@ -705,21 +709,21 @@ class SSHTunneledSocketImpl extends SocketInterface {
   void listen(Uint8ListCallback messageHandler) => onMessage = messageHandler;
 
   @override
-  void send(String text) => sendRaw(utf8.encode(text));
+  void send(String text) => sendRaw(Uint8List.fromList(utf8.encode(text)));
 
   @override
   void sendRaw(Uint8List raw) {
-    if (shutdownSend) return;
+    if (shutdownSend!) return;
     //client.debugPrint('DEBUG SSHTunneledSocketImpl.send: ${String.fromCharCodes(raw)}');
-    client.sendToChannel(channel, raw);
+    client!.sendToChannel(channel!, raw);
   }
 
   @override
   void close() {
-    if (clientOwner) {
-      client.disconnect('close');
+    if (clientOwner!) {
+      client!.disconnect('close');
     } else if (channel != null) {
-      client.closeChannel(channel);
+      client!.closeChannel(channel!);
     }
   }
 
@@ -732,14 +736,14 @@ class SSHTunneledSocketImpl extends SocketInterface {
     tunnelToPort = address.port;
     connectHandler = connectCallback;
     connectError = errorHandler;
-    if (clientOwner) {
-      client.socket.connect(client.hostport, client.onConnected, (error) {
-        client.disconnect('connect error');
-        if (connectError != null) connectError(error);
+    if (clientOwner!) {
+      client!.socket!.connect(client!.hostport!, client!.onConnected!, (error) {
+        client!.disconnect('connect error');
+        if (connectError != null) connectError!(error);
       });
     } else {
-      if (client.sessionChannel == null) {
-        client.success.add(openTunnel);
+      if (client!.sessionChannel == null) {
+        client!.success.add(openTunnel);
       } else {
         openTunnel();
       }
@@ -750,20 +754,20 @@ class SSHTunneledSocketImpl extends SocketInterface {
   void openTunnel([String sourceHost = '127.0.0.1', int sourcePort = 1234]) {
     this.sourceHost = sourceHost;
     this.sourcePort = sourcePort;
-    channel = client.openTcpChannel(
-        sourceHost, sourcePort, tunnelToHost, tunnelToPort, (_, Uint8List m) {
+    channel = client!.openTcpChannel(
+        sourceHost, sourcePort, tunnelToHost!, tunnelToPort!, (_, Uint8List m) {
       //client.debugPrint('DEBUG SSHTunneledSocketImpl.recv: ${String.fromCharCodes(m)}');
       //client.debugPrint('DEBUG SSHTunneledSocketImpl.recvRaw(${m.length}) = $m');
-      onMessage(m);
+      onMessage!(m);
     }, connected: () {
-      if (connectHandler != null) connectHandler();
+      if (connectHandler != null) connectHandler!();
       connectHandler = null;
       connectError = null;
-    }, error: (String description) {
+    }, error: (String? description) {
       if (connectError != null) {
         connectError!(description);
       } else {
-        onError(description);
+        onError!(description);
       }
       connectHandler = null;
       connectError = null;

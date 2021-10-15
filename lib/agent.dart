@@ -67,10 +67,10 @@ mixin SSHAgentForwarding on SSHTransport {
     if (tracePrint != null) {
       tracePrint!('$hostport: agent channel: AGENTC_SIGN_REQUEST');
     }
-    final SerializableInput keyStream = SerializableInput(msg.key);
+    final SerializableInput keyStream = SerializableInput(msg.key!);
     final String keyType = deserializeString(keyStream);
     final Uint8List? sig =
-        identity!.signMessage(Key.id(keyType), msg.data, getSecureRandom());
+        identity!.signMessage(Key.id(keyType), msg.data!, getSecureRandom());
     if (sig != null) {
       sendToChannel(channel, AGENT_SIGN_RESPONSE(sig).toRaw());
     } else {
@@ -170,15 +170,15 @@ class AGENT_IDENTITIES_ANSWER extends AgentMessage {
 /// https://tools.ietf.org/html/draft-miller-ssh-agent-03#section-4.5
 class AGENTC_SIGN_REQUEST extends AgentMessage {
   static const int ID = 13;
-  Uint8List key, data;
-  int flags;
+  Uint8List? key, data;
+  int? flags;
   AGENTC_SIGN_REQUEST([this.key, this.data, this.flags = 0]) : super(ID);
 
   @override
   int get serializedHeaderSize => 4 * 3;
 
   @override
-  int get serializedSize => serializedHeaderSize + key.length + data.length;
+  int get serializedSize => serializedHeaderSize + key!.length + data!.length;
 
   @override
   void deserialize(SerializableInput input) {
@@ -191,21 +191,21 @@ class AGENTC_SIGN_REQUEST extends AgentMessage {
   void serialize(SerializableOutput output) {
     serializeString(output, key);
     serializeString(output, data);
-    output.addUint32(flags);
+    output.addUint32(flags!);
   }
 }
 
 /// On success, the agent shall reply with:
 class AGENT_SIGN_RESPONSE extends AgentMessage {
   static const int ID = 14;
-  Uint8List sig;
+  Uint8List? sig;
   AGENT_SIGN_RESPONSE([this.sig]) : super(ID);
 
   @override
   int get serializedHeaderSize => 4;
 
   @override
-  int get serializedSize => serializedHeaderSize + sig.length;
+  int get serializedSize => serializedHeaderSize + sig!.length;
 
   @override
   void deserialize(SerializableInput input) =>

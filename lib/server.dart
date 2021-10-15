@@ -192,7 +192,7 @@ class SSHServer extends SSHTransport {
     MapEntry<BigInt, BigInt>? group = gexRequest?.call(msg);
     if (group == null) {
       DiffieHellman group14 = DiffieHellman.group14();
-      group = MapEntry<BigInt, BigInt>(group14.p, group14.g);
+      group = MapEntry<BigInt, BigInt>(group14.p!, group14.g!);
     }
     initializeDiffieHellman(kexMethod, random!);
     initializeDiffieHellmanGroup(group.key, group.value, random!);

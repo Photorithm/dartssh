@@ -694,24 +694,24 @@ Uint8List computeExchangeHash(
   H.update(kS);
 
   if (KEX.diffieHellmanGroupExchange(kexMethod)) {
-    H.updateInt(dh.gexMin);
-    H.updateInt(dh.gexPref);
-    H.updateInt(dh.gexMax);
-    H.updateBigInt(dh.p);
-    H.updateBigInt(dh.g);
+    H.updateInt(dh.gexMin!);
+    H.updateInt(dh.gexPref!);
+    H.updateInt(dh.gexMax!);
+    H.updateBigInt(dh.p!);
+    H.updateBigInt(dh.g!);
   }
   if (KEX.x25519DiffieHellman(kexMethod)) {
-    if (server) H.update(x25519dh.remotePubKey);
-    H.update(x25519dh.myPubKey);
-    if (!server) H.update(x25519dh.remotePubKey);
+    if (server) H.update(x25519dh.remotePubKey!);
+    H.update(x25519dh.myPubKey!);
+    if (!server) H.update(x25519dh.remotePubKey!);
   } else if (KEX.ellipticCurveDiffieHellman(kexMethod)) {
-    if (server) H.update(ecdh.sText);
-    H.update(ecdh.cText);
-    if (!server) H.update(ecdh.sText);
+    if (server) H.update(ecdh.sText!);
+    H.update(ecdh.cText!);
+    if (!server) H.update(ecdh.sText!);
   } else {
-    if (server) H.updateBigInt(dh.f);
-    H.updateBigInt(dh.e);
-    if (!server) H.updateBigInt(dh.f);
+    if (server) H.updateBigInt(dh.f!);
+    H.updateBigInt(dh.e!);
+    if (!server) H.updateBigInt(dh.f!);
   }
   H.updateBigInt(K);
   return H.finish();
