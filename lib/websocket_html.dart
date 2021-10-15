@@ -15,7 +15,7 @@ class WebSocketImpl extends SocketInterface {
   html.WebSocket? socket;
   Uint8ListCallback? messageHandler;
   StringCallback? errorHandler, doneHandler;
-  VoidCallback connectCallback;
+  VoidCallback? connectCallback;
   StreamSubscription? connectErrorSubscription,
       messageSubscription,
       errorSubscription,
@@ -61,9 +61,9 @@ class WebSocketImpl extends SocketInterface {
       connectCallback = onConnected;
       socket = html.WebSocket('$uri')..binaryType = 'arraybuffer';
 
-      socket.onOpen.listen(connectSucceeded);
+      socket?.onOpen.listen(connectSucceeded);
       connectErrorSubscription =
-          socket.onError.listen((error) => onError('$error'));
+          socket?.onError.listen((error) => onError('$error'));
     } catch (error) {
       onError('$error');
     }
@@ -72,7 +72,7 @@ class WebSocketImpl extends SocketInterface {
   void connectSucceeded(dynamic x) {
     connectErrorSubscription?.cancel();
     connectErrorSubscription = null;
-    connectCallback();
+    connectCallback?.call();
   }
 
   @override
@@ -87,35 +87,29 @@ class WebSocketImpl extends SocketInterface {
   void listen(Uint8ListCallback newMessageHandler) {
     messageHandler = newMessageHandler;
 
-    if (errorSubscription == null) {
-      errorSubscription = socket.onError.listen((error) {
-        if (errorHandler != null) {
-          errorHandler('$error');
-        }
-      });
-    }
+    errorSubscription ??= socket?.onError.listen((error) {
+      if (errorHandler != null) {
+        errorHandler!('$error');
+      }
+    });
 
-    if (doneSubscription == null) {
-      doneSubscription = socket.onClose.listen((closeEvent) {
-        if (doneHandler != null) {
-          doneHandler('$closeEvent');
-        }
-      });
-    }
+    doneSubscription ??= socket?.onClose.listen((closeEvent) {
+      if (doneHandler != null) {
+        doneHandler!('$closeEvent');
+      }
+    });
 
-    if (messageSubscription == null) {
-      messageSubscription = socket.onMessage.listen((e) {
-        if (messageHandler != null) {
-          final data = e.data is Uint8List ? e.data : e.data.asUint8List();
-          messageHandler(data);
-        }
-      });
-    }
+    messageSubscription ??= socket?.onMessage.listen((e) {
+      if (messageHandler != null) {
+        final data = e.data is Uint8List ? e.data : e.data.asUint8List();
+        messageHandler!(data);
+      }
+    });
   }
 
   @override
-  void send(String text) => socket.sendString(text);
+  void send(String text) => socket?.sendString(text);
 
   @override
-  void sendRaw(Uint8List raw) => socket.send(raw);
+  void sendRaw(Uint8List raw) => socket?.send(raw);
 }

@@ -46,7 +46,7 @@ class SocketImpl extends SocketInterface {
     connecting = true;
     if (socket != null) {
       if (socket is SocketAdaptor) {
-        (socket as SocketAdaptor).impl.connect(
+        (socket as SocketAdaptor).impl?.connect(
             uri, () => connectSucceeded(onConnected), onError,
             timeoutSeconds: timeoutSeconds, ignoreBadCert: ignoreBadCert);
       } else {
@@ -80,34 +80,34 @@ class SocketImpl extends SocketInterface {
   @override
   void listen(Uint8ListCallback newMessageHandler) {
     messageHandler = newMessageHandler;
-    messageSubscription ??= socket.listen((Uint8List m) {
+    messageSubscription ??= socket?.listen((Uint8List m) {
       if (messageHandler != null) {
-        messageHandler(m);
+        messageHandler!(m);
       }
     }, onDone: () {
       if (onDone != null) {
-        onDone(null);
+        onDone!(null);
       }
     }, onError: (error, stacktrace) {
       if (onError != null) {
-        onError('$error: $stacktrace');
+        onError!('$error: $stacktrace');
       }
     });
   }
 
   @override
-  void send(String text) => sendRaw(utf8.encode(text));
+  void send(String text) => sendRaw(Uint8List.fromList(utf8.encode(text)));
 
   @override
-  void sendRaw(Uint8List raw) => socket.add(raw);
+  void sendRaw(Uint8List raw) => socket?.add(raw);
 }
 
 /// https://github.com/dart-lang/sdk/blob/master/sdk/lib/_internal/vm/bin/socket_patch.dart#L1651
 class SocketAdaptor extends Stream<Uint8List> implements Socket {
   SocketInterface? impl;
-  StreamController<Uint8List> controller;
-  SocketAdaptorStreamConsumer consumer;
-  IOSink sink;
+  late StreamController<Uint8List> controller;
+  late SocketAdaptorStreamConsumer consumer;
+  late IOSink sink;
   StringCallback? debugPrint;
   // var _detachReady;
 
@@ -140,15 +140,15 @@ class SocketAdaptor extends Stream<Uint8List> implements Socket {
     sink = IOSink(consumer);
 
     /// https://github.com/dart-lang/sdk/issues/39589
-    impl.listen((Uint8List m) => controller.add(Uint8List.fromList(m)));
-    impl.handleError((error) => controller.addError(error));
-    impl.handleDone((String reason) => controller.addError(reason));
+    impl?.listen((Uint8List m) => controller.add(Uint8List.fromList(m)));
+    impl?.handleError((error) => controller.addError(error!));
+    impl?.handleDone((String? reason) => controller.addError(reason!));
   }
 
   @override
   void destroy() {
     consumer.stop();
-    impl.close();
+    impl?.close();
     controller.close();
   }
 
@@ -174,7 +174,8 @@ class SocketAdaptor extends Stream<Uint8List> implements Socket {
   }
 
   @override
-  Future<Socket> addStream(Stream<List<int>> stream) => sink.addStream(stream);
+  Future<Socket> addStream(Stream<List<int>> stream) =>
+      sink.addStream(stream) as Future<Socket>;
 
   @override
   Future flush() => sink.flush();
@@ -189,18 +190,18 @@ class SocketAdaptor extends Stream<Uint8List> implements Socket {
   bool setOption(SocketOption option, bool enabled) => false;
 
   @override
-  Uint8List getRawOption(RawSocketOption option) => null;
+  Uint8List getRawOption(RawSocketOption option) => Uint8List.fromList([]);
 
   @override
   void setRawOption(RawSocketOption option) {}
 
   @override
-  StreamSubscription<Uint8List> listen(void Function(Uint8List event) onData,
+  StreamSubscription<Uint8List> listen(void Function(Uint8List event)? onData,
       {Function? onError, void Function()? onDone, bool? cancelOnError}) {
     //debugPrint('DEBUG SocketAdaptor.listen $remoteAddress:$remotePort');
     return controller.stream.listen((m) {
       //debugPrint('DEBUG SocketAdaptor.read $m');
-      onData(m);
+      onData?.call(m);
     }, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 

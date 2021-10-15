@@ -157,7 +157,7 @@ class Key {
       id == ECDSA_SHA2_NISTP384 ||
       id == ECDSA_SHA2_NISTP521;
 
-  static ECDomainParameters ellipticCurve(int id) {
+  static ECDomainParameters? ellipticCurve(int id) {
     switch (id) {
       case ECDSA_SHA2_NISTP256:
         return ECCurve_secp256r1();
@@ -170,7 +170,7 @@ class Key {
     }
   }
 
-  static String ellipticCurveName(int id) {
+  static String? ellipticCurveName(int id) {
     switch (id) {
       case ECDSA_SHA2_NISTP256:
         return 'nistp256';
@@ -183,7 +183,7 @@ class Key {
     }
   }
 
-  static int ellipticCurveSecretBits(int id) {
+  static int? ellipticCurveSecretBits(int id) {
     switch (id) {
       case ECDSA_SHA2_NISTP256:
         return 256;
@@ -196,7 +196,7 @@ class Key {
     }
   }
 
-  static Digest ellipticCurveHash(int id) {
+  static Digest? ellipticCurveHash(int id) {
     switch (id) {
       case ECDSA_SHA2_NISTP256:
         return SHA256Digest();
@@ -287,7 +287,7 @@ class KEX {
       id == ECDH_SHA2_NISTP384 ||
       id == ECDH_SHA2_NISTP521;
 
-  static ECDomainParameters ellipticCurve(int id) {
+  static ECDomainParameters? ellipticCurve(int id) {
     switch (id) {
       case ECDH_SHA2_NISTP256:
         return ECCurve_secp256r1();
@@ -300,7 +300,7 @@ class KEX {
     }
   }
 
-  static int ellipticCurveSecretBits(int id) {
+  static int? ellipticCurveSecretBits(int id) {
     switch (id) {
       case ECDH_SHA2_NISTP256:
         return 256;
@@ -313,7 +313,7 @@ class KEX {
     }
   }
 
-  static Digest ellipticCurveHash(int id) {
+  static Digest? ellipticCurveHash(int id) {
     switch (id) {
       case ECDH_SHA2_NISTP256:
         return SHA256Digest();

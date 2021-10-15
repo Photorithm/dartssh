@@ -101,13 +101,13 @@ class WebSocketImpl extends SocketInterface {
       messageSubscription = socket!.listen((m) {
         //print("WebSocketImpl.read: $m");
         if (messageHandler != null) {
-          messageHandler?.call(utf8.encode(m));
+          messageHandler?.call(Uint8List.fromList(utf8.encode(m)));
         }
       });
 
       socket!.done.then((_) {
         doneHandler?.call(
-            'WebSocketImpl.handleDone: ${socket.closeCode} ${socket.closeReason}');
+            'WebSocketImpl.handleDone: ${socket?.closeCode} ${socket?.closeReason}');
 
         return null;
       });
@@ -186,7 +186,7 @@ class SSHTunneledWebSocketImpl extends WebSocketImpl {
       socket = io.WebSocket.fromUpgradedSocket(
           SocketAdaptor(
             tunneledSocket,
-            address: tryParseInternetAddress('127.0.0.1'),
+            address: tryParseInternetAddress('127.0.0.1')!,
             remoteAddress: (await io.InternetAddress.lookup(uri.host)).first,
             port: 1234,
             remotePort: uri.port,

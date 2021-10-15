@@ -10,7 +10,6 @@ import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:dartssh/client.dart';
 import 'package:dartssh/http.dart';
-import 'package:dartssh/identity.dart';
 import 'package:dartssh/pem.dart';
 import 'package:dartssh/protocol.dart';
 import 'package:dartssh/serializable.dart';
@@ -25,9 +24,9 @@ import '../example/dartsshd.dart' as sshd;
 void main() {
   /// https://www.ietf.org/rfc/rfc4251.txt
   test('mpint', () {
-    Uint8List buffer = Uint8List(4096);
-    SerializableInput input = SerializableInput(buffer, endian: Endian.big);
-    SerializableOutput output = SerializableOutput(buffer, endian: Endian.big);
+    final buffer = Uint8List(4096);
+    final input = SerializableInput(buffer, endian: Endian.big);
+    final output = SerializableOutput(buffer, endian: Endian.big);
 
     BigInt x = BigInt.from(0);
     serializeMpInt(output, x);
@@ -51,9 +50,9 @@ void main() {
   });
 
   test('pem', () {
-    Identity rsa1 = parsePem(File('test/id_rsa').readAsStringSync());
-    Identity rsa2 = parsePem(File('test/id_rsa.openssh').readAsStringSync());
-    expect(rsa1.rsaPublic.exponent, rsa2.rsaPublic.exponent);
+    final rsa1 = parsePem(File('test/id_rsa').readAsStringSync());
+    final rsa2 = parsePem(File('test/id_rsa.openssh').readAsStringSync());
+    expect(rsa1.rsaPublic?.exponent, rsa2.rsaPublic?.exponent);
   });
 
   test('TestSocket', () {
@@ -140,7 +139,8 @@ void main() {
       while (ssh.client.sessionChannel == null) {
         await Future.delayed(const Duration(seconds: 1));
       }
-      ssh.client.sendChannelData(utf8.encode('testAgent\nexit\n'));
+      ssh.client.sendChannelData(
+          Uint8List.fromList(utf8.encode('testAgent\nexit\n')));
       await sshMain;
       await sshdMain;
       expect(sshResponse, '\$ testAgent\nexit\nsuccess\n');
@@ -205,12 +205,13 @@ void main() {
     ssh.client.setTerminalWindowSize(80, 25);
     ssh.client.exec('ls');
 
-    bool tunneledHttpTest = await httpTest(
+    final tunneledHttpTest = await httpTest(
         HttpClientImpl(clientFactory: () => SSHTunneledBaseClient(ssh.client)),
         proto: 'http');
     expect(tunneledHttpTest, true);
 
-    ssh.client.sendChannelData(utf8.encode('debugTest\nexit\n'));
+    ssh.client
+        .sendChannelData(Uint8List.fromList(utf8.encode('debugTest\nexit\n')));
     await sshMain;
     await sshdMain;
     expect(sshResponse, 'Password:\r\n\$ debugTest\nexit\n');
@@ -253,7 +254,7 @@ void main() {
         proto: 'ws');
     expect(tunneledWebsocketTest, true);
 
-    ssh.client.sendChannelData(utf8.encode('exit\n'));
+    ssh.client.sendChannelData(Uint8List.fromList(utf8.encode('exit\n')));
     await sshMain;
     await sshdMain;
     expect(sshResponse, '\$ exit\n');
@@ -262,7 +263,8 @@ void main() {
 
 Future<bool> httpTest(HttpClient httpClient, {String proto = 'https'}) async {
   final response = await httpClient.request('$proto://www.greenappers.com/');
-  return response != null && response.text.contains('support@greenappers.com');
+  return response != null &&
+      response.text?.contains('support@greenappers.com') == true;
 }
 
 Future<bool> websocketEchoTest(WebSocketImpl websocket,
