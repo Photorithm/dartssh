@@ -737,7 +737,7 @@ class SSHTunneledSocketImpl extends SocketInterface {
     connectHandler = connectCallback;
     connectError = errorHandler;
     if (clientOwner!) {
-      client!.socket!.connect(client!.hostport!, client!.onConnected!, (error) {
+      client!.socket!.connect(client!.hostport!, client!.onConnected, (error) {
         client!.disconnect('connect error');
         if (connectError != null) connectError!(error);
       });
